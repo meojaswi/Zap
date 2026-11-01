@@ -27,3 +27,6 @@ desktop.ini
 # Environment
 .env
 .env.*
+
+.vercel
+.env*

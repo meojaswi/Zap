@@ -1,0 +1,5 @@
+# Only the landing page is deployed to Vercel; skip the app, its build output, and dependencies.
+/*
+!/site
+/site/node_modules
+/site/dist

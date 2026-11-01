@@ -8,7 +8,7 @@
 
 Type a short trigger in any app and Zap turns it into your saved text: emails, addresses, replies, code.
 
-[**Download for Windows**](https://github.com/meojaswi/Zap/releases/latest) · [Website](https://meojaswi.github.io/Zap/) · [Report a bug](https://github.com/meojaswi/Zap/issues)
+[**Download for Windows**](https://github.com/meojaswi/Zap/releases/latest) · [Website](https://zap-rho-five.vercel.app) · [Report a bug](https://github.com/meojaswi/Zap/issues)
 
 <img src="docs/demo.gif" width="800" alt="Typing `pemail expands to an email address, `date expands to today's date, and Ctrl+Shift+Space opens a search box that pastes a saved reply">
 
@@ -77,17 +77,8 @@ npm run build   # build the installer → src-tauri/target/release/bundle/nsis/
 │       ├── clipboard.rs   clipboard access, kept out of Win+V history
 │       ├── store.rs       snippets and settings
 │       └── crypto.rs      DPAPI encryption
-├── site/           Landing page (React + TypeScript + Tailwind), deployed to GitHub Pages
+├── site/           Landing page (React + TypeScript + Tailwind), deployed to Vercel
 └── docs/           README assets
 ```
 
 The landing page is a separate project. Run it with `cd site && npm install && npm run dev`.
-
-## Made by
-
-<table>
-  <tr>
-    <td align="center"><a href="https://www.linkedin.com/in/kumar-ojaswi/"><img src="site/public/ojaswi.png" width="96" alt=""><br><b>Ojaswi</b></a></td>
-    <td align="center"><a href="https://www.linkedin.com/in/harsh-pandey-cakewalk/"><img src="site/public/harsh.png" width="96" alt=""><br><b>Harsh</b></a></td>
-  </tr>
-</table>
