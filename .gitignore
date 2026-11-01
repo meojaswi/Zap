@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Rust / Tauri build output
+src-tauri/target/
+src-tauri/gen/
+
+# Local data and exports (snippet exports are unencrypted)
+*.dat
+*.dat.bad
+*.dat.tmp
+zap-snippets*.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.*

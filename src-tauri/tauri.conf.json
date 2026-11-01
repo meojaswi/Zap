@@ -1,0 +1,66 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Zap",
+  "version": "0.1.0",
+  "identifier": "com.ojaswi.zap",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Zap",
+        "url": "index.html",
+        "width": 960,
+        "height": 640,
+        "minWidth": 720,
+        "minHeight": 480,
+        "center": true,
+        "visible": false
+      },
+      {
+        "label": "popup",
+        "title": "Zap search",
+        "url": "popup.html",
+        "width": 620,
+        "height": 430,
+        "center": true,
+        "visible": false,
+        "decorations": false,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Kumar Ojaswi",
+    "copyright": "© 2026 Kumar Ojaswi",
+    "category": "Productivity",
+    "shortDescription": "Zap — type, zap, done",
+    "longDescription": "Zap is a text expander for Windows. Type a trigger or press a hotkey to insert saved snippets anywhere.",
+    "windows": {
+      "webviewInstallMode": { "type": "embedBootstrapper" },
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "displayLanguageSelector": false,
+        "startMenuFolder": "Zap"
+      }
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ]
+  }
+}

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zap</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">ZAP <span class="bolt">⚡</span><small>type, zap, done</small></div>
+      <nav class="tabs">
+        <button class="tab active" data-view="snippets">Snippets</button>
+        <button class="tab" data-view="settings">Settings</button>
+      </nav>
+      <div class="spacer"></div>
+      <button class="status-pill" id="status" title="Pause or resume Zap"><span class="dot"></span><span id="status-text">Active</span></button>
+    </header>
+
+    <div class="banner" id="hotkey-banner" hidden></div>
+
+    <section class="view active" id="view-snippets">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <input class="input" id="search" placeholder="search_" autocomplete="off" spellcheck="false">
+          <button class="btn primary" id="new-btn" title="New snippet (Ctrl+N)">+ new</button>
+        </div>
+        <div class="list" id="list"></div>
+      </aside>
+
+      <main class="editor" id="editor">
+        <div class="welcome" id="welcome">
+          <div class="bolt">⚡</div>
+          <h2>pick a snippet, or create one</h2>
+          <p>Type a trigger like <code>`pemail</code> in any app and it expands instantly. Or press <kbd id="welcome-hotkey">Ctrl+Shift+Space</kbd> to search and paste.</p>
+        </div>
+
+        <form class="editor-inner" id="form" hidden>
+          <div class="row">
+            <div class="field">
+              <label for="f-name">Name</label>
+              <input class="input" id="f-name" placeholder="Personal email" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="f-trigger">Trigger</label>
+              <input class="input" id="f-trigger" placeholder="`pemail" autocomplete="off" spellcheck="false">
+              <div class="hint">Start with <code>`</code> so it never fires by accident.</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-content">Text</label>
+            <textarea class="textarea" id="f-content" placeholder="your.email@example.com" spellcheck="false"></textarea>
+            <div class="hint" style="margin-bottom:6px">Click to insert a placeholder:</div>
+            <div class="chips">
+              <button type="button" class="chip" data-ph="{date}">{date}</button>
+              <button type="button" class="chip" data-ph="{time}">{time}</button>
+              <button type="button" class="chip" data-ph="{datetime}">{datetime}</button>
+              <button type="button" class="chip" data-ph="{day}">{day}</button>
+              <button type="button" class="chip" data-ph="{clipboard}">{clipboard}</button>
+              <button type="button" class="chip" data-ph="{uuid}">{uuid}</button>
+            </div>
+          </div>
+
+          <div class="field" id="preview-field">
+            <span class="label">Preview</span>
+            <div class="preview-box" id="preview"></div>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" id="f-sensitive">
+            <span><strong>Sensitive</strong><br><span class="hint">Typed out key by key instead of pasted, so it never touches the clipboard. Hidden in the list and search.</span></span>
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="btn primary" id="save-btn">Save</button>
+            <button type="button" class="btn" id="cancel-btn">Cancel</button>
+            <div class="spacer"></div>
+            <button type="button" class="btn danger" id="delete-btn">Delete</button>
+          </div>
+        </form>
+      </main>
+    </section>
+
+    <section class="view" id="view-settings">
+      <div class="settings">
+        <div class="settings-inner">
+          <div class="card">
+            <h3>Search hotkey</h3>
+            <p>Opens the Zap search box from any app. Click the box and press the new combination.</p>
+            <div class="card-row">
+              <input class="input hotkey-input" id="hotkey" readonly>
+              <button class="btn" id="hotkey-reset">Reset</button>
+            </div>
+            <div class="hint">Good choices: <kbd>Ctrl+Shift+Space</kbd>, <kbd>Alt+;</kbd>, <kbd>Pause</kbd>, <kbd>ScrollLock</kbd>, <kbd>F13</kbd>–<kbd>F24</kbd>.</div>
+          </div>
+
+          <div class="card">
+            <div class="card-row">
+              <div style="flex:1">
+                <h3>Expand triggers as I type</h3>
+                <p style="margin:0">Type <code>`pemail</code> in any app and it becomes your email, without opening the search box. This needs a keyboard hook that sees your keystrokes. Zap only keeps the last few characters in memory and never saves or logs them.</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="inline"><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Excluded apps</h3>
+            <p>Triggers typed in these apps are ignored (inline mode only). One program name per line, e.g. <code>valorant.exe</code>.</p>
+            <textarea class="textarea" id="excluded" style="min-height:90px" spellcheck="false" placeholder="valorant.exe&#10;keepass.exe"></textarea>
+            <div class="actions" style="margin-top:10px"><button class="btn" id="excluded-save">Save list</button></div>
+          </div>
+
+          <div class="card">
+            <div class="card-row">
+              <div style="flex:1">
+                <h3>Start with Windows</h3>
+                <p style="margin:0">Launch Zap quietly in the system tray when you sign in.</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="autostart"><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Backup</h3>
+            <p>Export saves your snippets as a <strong>plain, unencrypted</strong> JSON file, so keep it somewhere safe. Importing updates snippets with the same trigger.</p>
+            <div class="actions">
+              <button class="btn" id="export-btn">Export…</button>
+              <button class="btn" id="import-btn">Import…</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>How Zap protects your data</h3>
+            <ul class="security-list">
+              <li>Snippets are encrypted on disk with Windows DPAPI, so only your Windows account can read them.</li>
+              <li>Pasted text is kept out of Win+V clipboard history and cloud clipboard sync, and your previous clipboard text is put back.</li>
+              <li>Sensitive snippets are typed key by key and never go through the clipboard.</li>
+              <li>Keystrokes are never written to disk or logged.</li>
+              <li>Don't store passwords here. A password manager is the right place for those.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="main.js"></script>
+</body>
+</html>

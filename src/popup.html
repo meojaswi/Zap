@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zap search</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="popup">
+  <div class="popup-wrap">
+    <div class="popup-search">
+      <span class="bolt">⚡</span>
+      <input id="q" placeholder="search_" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="popup-list" id="results"></div>
+    <div class="popup-foot">
+      <span><kbd>↑</kbd> <kbd>↓</kbd> move</span>
+      <span><kbd>Enter</kbd> paste</span>
+      <span><kbd>Esc</kbd> close</span>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
