@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 
-const SCALE = 2; // screen pixels per noise pixel: big enough to read as grain, not mush
-const FRAMES = 6; // pre-rendered noise frames, cycled so each tick is just a blit
+const FRAMES = 4; // pre-rendered noise frames, cycled so each tick is just a blit
 const FPS = 12;
+// One noise dot per physical pixel for the finest grain, capped so the frames stay a few MB.
+const MAX_PIXELS = 1_500_000;
 
 /**
  * TV-static "snow": grey noise flickering at a low frame rate. Frames are generated once per size
@@ -23,8 +24,10 @@ export function StaticNoise({ className = "" }: { className?: string }) {
     let visible = true;
 
     const build = () => {
-      const w = Math.max(1, Math.ceil(canvas.clientWidth / SCALE));
-      const h = Math.max(1, Math.ceil(canvas.clientHeight / SCALE));
+      const area = canvas.clientWidth * canvas.clientHeight;
+      const density = Math.min(window.devicePixelRatio || 1, Math.sqrt(MAX_PIXELS / Math.max(1, area)));
+      const w = Math.max(1, Math.ceil(canvas.clientWidth * density));
+      const h = Math.max(1, Math.ceil(canvas.clientHeight * density));
       canvas.width = w;
       canvas.height = h;
       frames = Array.from({ length: still ? 1 : FRAMES }, () => {
@@ -63,5 +66,5 @@ export function StaticNoise({ className = "" }: { className?: string }) {
     };
   }, []);
 
-  return <canvas ref={ref} aria-hidden className={`pointer-events-none [image-rendering:pixelated] ${className}`} />;
+  return <canvas ref={ref} aria-hidden className={`pointer-events-none ${className}`} />;
 }
