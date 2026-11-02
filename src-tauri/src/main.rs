@@ -356,7 +356,7 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
 }
 
 fn main() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         // Must be first: a second launch just focuses the running Zap.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(
@@ -373,7 +373,6 @@ fn main() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            store::init(app.path().app_data_dir()?);
             let handle = app.handle().clone();
             let settings = shared().data.read().unwrap().settings.clone();
             if let Err(e) = register_hotkey(&handle, &settings.hotkey) {
@@ -413,6 +412,11 @@ fn main() {
             check_for_updates,
             install_update
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Zap");
+        .build(tauri::generate_context!())
+        .expect("error while building Zap");
+
+    // Windows are created before setup() runs and can call get_data as soon as they load,
+    // so the store has to be ready before the app starts running.
+    store::init(app.path().app_data_dir().expect("no app data folder"));
+    app.run(|_, _| {});
 }
