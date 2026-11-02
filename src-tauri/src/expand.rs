@@ -55,3 +55,15 @@ pub fn deliver(snippet: &Snippet, backspaces: usize) {
         None => clipboard::clear(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::render;
+
+    #[test]
+    fn fills_every_placeholder() {
+        let out = render("d={date} t={time} dt={datetime} day={day} u={uuid}");
+        println!("{out}");
+        assert!(!out.contains('{'), "unfilled placeholder in: {out}");
+    }
+}

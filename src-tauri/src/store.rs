@@ -100,6 +100,12 @@ fn seed() -> Data {
         snippets: vec![
             snippet("Personal email", "`pemail", "your.email@example.com"),
             snippet("Today's date", "`date", "{date}"),
+            // `now rather than `datetime: `date is part of `datetime, so they couldn't coexist.
+            snippet("Date and time", "`now", "{datetime}"),
+            snippet("Current time", "`time", "{time}"),
+            snippet("Day of the week", "`day", "{day}"),
+            snippet("Paste clipboard", "`clipboard", "{clipboard}"),
+            snippet("Random ID", "`uuid", "{uuid}"),
             snippet("Go error check", "`iferr", "if err != nil {\n\treturn err\n}"),
         ],
         settings: Settings::default(),
@@ -150,4 +156,17 @@ pub fn validate(snippets: &[Snippet], candidate: &Snippet) -> Result<(), String>
 pub fn normalize_app(name: &str) -> String {
     let name = name.trim().to_lowercase();
     if name.is_empty() || name.ends_with(".exe") { name } else { format!("{name}.exe") }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{seed, validate};
+
+    #[test]
+    fn seed_snippets_are_valid_together() {
+        let snippets = seed().snippets;
+        for snippet in &snippets {
+            assert_eq!(validate(&snippets, snippet), Ok(()), "{}", snippet.trigger);
+        }
+    }
 }

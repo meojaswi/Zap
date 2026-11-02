@@ -25,6 +25,8 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 
 ### Placeholders
 
+Placeholders go inside a snippet's text; they aren't triggers on their own. For example, a snippet with the trigger `` `now `` and the text `{datetime}` expands to the current date and time. New installs include one example snippet for each placeholder.
+
 | Placeholder   | Becomes                   |
 | ------------- | ------------------------- |
 | `{date}`      | `2026-11-01`              |
