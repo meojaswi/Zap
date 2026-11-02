@@ -43,6 +43,8 @@ function renderStatus() {
   banner.textContent = state.hotkeyError
     ? `${state.hotkeyError}. Another app may be using it, so pick a different one in Settings.`
     : "";
+  $("update-banner").hidden = !state.updateVersion;
+  $("update-text").textContent = `Zap ${state.updateVersion} is available.`;
 }
 
 function renderList() {
@@ -147,6 +149,8 @@ function renderSettings() {
   if (!$("hotkey").classList.contains("recording")) $("hotkey").value = state.settings.hotkey;
   $("inline").checked = state.settings.inlineEnabled;
   $("autostart").checked = state.autostart;
+  $("check-updates").checked = state.settings.checkUpdates;
+  $("app-version").textContent = state.appVersion;
   if (document.activeElement !== $("excluded")) $("excluded").value = state.settings.excludedApps.join("\n");
 }
 
@@ -250,6 +254,35 @@ $("autostart").addEventListener("change", async (e) => {
     toast(err, true);
   }
   await load();
+});
+
+$("check-updates").addEventListener("change", (e) =>
+  updateSettings({ checkUpdates: e.target.checked }, e.target.checked ? "Automatic update checks on" : "Automatic update checks off")
+);
+
+$("check-now").addEventListener("click", async () => {
+  const button = $("check-now");
+  button.disabled = true;
+  try {
+    const version = await invoke("check_for_updates");
+    toast(version ? `Zap ${version} is available` : "You're on the latest version");
+  } catch (e) {
+    toast(`Couldn't check for updates: ${e}`, true);
+  }
+  button.disabled = false;
+});
+
+$("update-install").addEventListener("click", async () => {
+  const button = $("update-install");
+  button.disabled = true;
+  button.textContent = "Installing…";
+  try {
+    await invoke("install_update"); // Zap restarts when this succeeds
+  } catch (e) {
+    toast(`Couldn't install the update: ${e}`, true);
+    button.disabled = false;
+    button.textContent = "Install and restart";
+  }
 });
 
 $("export-btn").addEventListener("click", async () => {

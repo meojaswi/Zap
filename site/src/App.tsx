@@ -10,9 +10,9 @@ import { CONTACT, REPO_URL } from "./config";
 import { useLatestRelease } from "./useLatestRelease";
 
 const METRICS = [
-  ["0", "network calls"],
+  ["0", "accounts or telemetry"],
   ["DPAPI", "encrypted at rest"],
-  ["3.4 MB", "installer size"],
+  ["4.5 MB", "installer size"],
   ["6", "live placeholders"],
 ];
 
@@ -43,7 +43,7 @@ const SECURITY = [
   ["clipboard", "Pastes kept out of Win+V history and cloud sync; old clipboard restored"],
   ["sensitive", "Sensitive snippets are typed key by key, never via clipboard"],
   ["keystrokes", "Never logged or saved; only the last few chars live in memory"],
-  ["network", "No account, no telemetry, no connections"],
+  ["network", "No account or telemetry; only connects to GitHub for signed updates, and you can turn that off"],
 ];
 
 const STEPS = [
@@ -111,7 +111,7 @@ export default function App() {
                 </h1>
                 <p className="mt-7 max-w-md leading-[1.6] text-muted">
                   A private text expander for Windows. Type a short trigger in any app and it becomes your saved
-                  email, address, reply or code — encrypted, offline, instant.
+                  email, address, reply or code — encrypted, local, instant.
                 </p>
                 <div className="mt-10 flex flex-wrap items-center gap-5">
                   <DownloadButton release={release} />

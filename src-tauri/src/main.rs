@@ -7,6 +7,7 @@ mod expand;
 mod hook;
 mod input;
 mod store;
+mod updater;
 mod winutil;
 
 use std::sync::atomic::{AtomicIsize, Ordering};
@@ -21,6 +22,7 @@ use tauri::{AppHandle, Emitter, Manager, WindowEvent, Wry};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_notification::NotificationExt;
 
 use store::{normalize_app, shared, Settings, Snippet};
 
@@ -30,6 +32,7 @@ static HOTKEY_ERROR: Mutex<Option<String>> = Mutex::new(None);
 
 struct TrayState {
     pause: CheckMenuItem<Wry>,
+    update: MenuItem<Wry>,
 }
 
 #[derive(Serialize)]
@@ -40,6 +43,8 @@ struct AppData {
     autostart: bool,
     paused: bool,
     hotkey_error: Option<String>,
+    app_version: String,
+    update_version: Option<String>,
 }
 
 fn show_main(app: &AppHandle) {
@@ -100,6 +105,8 @@ fn get_data(app: AppHandle) -> AppData {
         autostart: app.autolaunch().is_enabled().unwrap_or(false),
         paused: shared().paused.load(Ordering::Relaxed),
         hotkey_error: HOTKEY_ERROR.lock().unwrap().clone(),
+        app_version: app.package_info().version.to_string(),
+        update_version: updater::pending_version(),
     }
 }
 
@@ -287,14 +294,40 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
     Ok(Some(result))
 }
 
+#[tauri::command]
+async fn check_for_updates(app: AppHandle) -> Result<Option<String>, String> {
+    updater::check(&app).await
+}
+
+#[tauri::command]
+async fn install_update(app: AppHandle) -> Result<(), String> {
+    updater::install(&app).await
+}
+
+/// Tray item: installs a pending update, otherwise checks for one and reports the result.
+async fn tray_update(app: AppHandle) {
+    let result = if updater::pending_version().is_some() {
+        updater::install(&app).await.map(|_| None)
+    } else {
+        updater::check(&app).await
+    };
+    let message = match result {
+        Ok(None) => "You're on the latest version.".to_string(),
+        Ok(Some(_)) => return, // check() has already notified about the new version
+        Err(e) => format!("Couldn't update: {e}"),
+    };
+    let _ = app.notification().builder().title("Zap").body(message).show();
+}
+
 fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Open Zap", true, None::<&str>)?;
     let search = MenuItem::with_id(app, "search", "Search snippets", true, None::<&str>)?;
     let pause = CheckMenuItem::with_id(app, "pause", "Pause Zap", true, false, None::<&str>)?;
+    let update = MenuItem::with_id(app, "update", "Check for updates", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let quit = MenuItem::with_id(app, "quit", "Quit Zap", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &search, &pause, &separator, &quit])?;
-    app.manage(TrayState { pause });
+    let menu = Menu::with_items(app, &[&open, &search, &pause, &update, &separator, &quit])?;
+    app.manage(TrayState { pause, update });
 
     TrayIconBuilder::with_id("zap")
         .icon(app.default_window_icon().cloned().expect("app icon missing"))
@@ -306,6 +339,9 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             "pause" => {
                 let paused = app.state::<TrayState>().pause.is_checked().unwrap_or(false);
                 set_paused_inner(app, paused);
+            }
+            "update" => {
+                tauri::async_runtime::spawn(tray_update(app.clone()));
             }
             "quit" => app.exit(0),
             _ => {}
@@ -334,6 +370,8 @@ fn main() {
         )
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--minimized"])))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             store::init(app.path().app_data_dir()?);
             let handle = app.handle().clone();
@@ -343,6 +381,7 @@ fn main() {
             }
             hook::set_enabled(settings.inline_enabled);
             build_tray(app)?;
+            updater::start(handle.clone());
             if !std::env::args().any(|a| a == "--minimized") {
                 show_main(&handle);
             }
@@ -370,7 +409,9 @@ fn main() {
             hide_popup,
             preview,
             export_snippets,
-            import_snippets
+            import_snippets,
+            check_for_updates,
+            install_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running Zap");

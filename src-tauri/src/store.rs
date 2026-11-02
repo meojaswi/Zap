@@ -31,11 +31,13 @@ pub struct Settings {
     pub inline_enabled: bool,
     /// Executable names (e.g. "valorant.exe") where inline expansion is disabled.
     pub excluded_apps: Vec<String>,
+    /// Look for new versions on GitHub at startup and about once an hour.
+    pub check_updates: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new() }
+        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true }
     }
 }
 

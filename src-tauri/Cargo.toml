@@ -1,6 +1,6 @@
 [package]
 name = "zap"
-version = "0.1.1"
+version = "0.1.2"
 description = "Zap — type, zap, done. A text expander for Windows."
 edition = "2021"
 
@@ -29,6 +29,8 @@ windows-sys = { version = "0.59", features = [
   "Win32_UI_TextServices",
   "Win32_UI_WindowsAndMessaging",
 ] }
+tauri-plugin-updater = "2"
+tauri-plugin-notification = "2"
 
 [profile.release]
 strip = true

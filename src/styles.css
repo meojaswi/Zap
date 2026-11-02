@@ -169,6 +169,15 @@ code { color: var(--muted); }
   color: var(--danger);
 }
 
+.banner.update {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+
 .view { flex: 1; min-height: 0; display: none; }
 .view.active { display: flex; }
 

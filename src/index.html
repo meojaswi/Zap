@@ -19,6 +19,10 @@
     </header>
 
     <div class="banner" id="hotkey-banner" hidden></div>
+    <div class="banner update" id="update-banner" hidden>
+      <span id="update-text"></span>
+      <button class="btn primary" id="update-install">Install and restart</button>
+    </div>
 
     <section class="view active" id="view-snippets">
       <aside class="sidebar">
@@ -124,6 +128,17 @@
           </div>
 
           <div class="card">
+            <div class="card-row">
+              <div style="flex:1">
+                <h3>Updates</h3>
+                <p style="margin:0">You're on Zap <span id="app-version"></span>. Zap checks GitHub about once an hour and notifies you when a new version is ready. No snippets or usage data are sent.</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="check-updates"><span class="slider"></span></label>
+            </div>
+            <div class="actions" style="margin-top:10px"><button class="btn" id="check-now">Check now</button></div>
+          </div>
+
+          <div class="card">
             <h3>Backup</h3>
             <p>Export saves your snippets as a <strong>plain, unencrypted</strong> JSON file, so keep it somewhere safe. Importing updates snippets with the same trigger.</p>
             <div class="actions">
@@ -139,6 +154,8 @@
               <li>Pasted text is kept out of Win+V clipboard history and cloud clipboard sync, and your previous clipboard text is put back.</li>
               <li>Sensitive snippets are typed key by key and never go through the clipboard.</li>
               <li>Keystrokes are never written to disk or logged.</li>
+              <li>The only thing Zap connects to is GitHub, to check for updates. You can turn that off above.</li>
+              <li>Updates are signed, and Zap refuses any download that isn't.</li>
               <li>Don't store passwords here. A password manager is the right place for those.</li>
             </ul>
           </div>
