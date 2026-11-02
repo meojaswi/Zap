@@ -15,8 +15,9 @@
         "url": "index.html",
         "width": 960,
         "height": 640,
-        "minWidth": 720,
-        "minHeight": 480,
+        "resizable": false,
+        "maximizable": false,
+        "fullscreen": false,
         "center": true,
         "visible": false
       },
