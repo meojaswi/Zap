@@ -104,6 +104,9 @@ async function refresh() {
   input.focus();
 }
 
+// No browser-style context menu anywhere in the window.
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
 listen("popup-shown", refresh);
 listen("data-changed", async () => {
   snippets = (await invoke("get_data")).snippets;

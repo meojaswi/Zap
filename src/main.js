@@ -286,5 +286,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// No browser-style context menu anywhere in the window.
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
 listen("data-changed", load);
 load();
