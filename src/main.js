@@ -43,6 +43,7 @@ function renderStatus() {
   banner.textContent = state.hotkeyError
     ? `${state.hotkeyError}. Another app may be using it, so pick a different one in Settings.`
     : "";
+  $("brand-version").textContent = state.appVersion;
   $("update-banner").hidden = !state.updateVersion;
   $("update-text").textContent = `Zap ${state.updateVersion} is available.`;
 }
