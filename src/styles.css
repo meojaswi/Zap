@@ -57,6 +57,13 @@ html, body {
 
 button, input, textarea { font: inherit; color: inherit; }
 
+/* Rules like .editor-inner { display: flex } would otherwise override the hidden attribute. */
+[hidden] { display: none !important; }
+
+/* An app, not a page: only text you can edit or copy from is selectable. */
+body { -webkit-user-select: none; user-select: none; }
+input, textarea, .preview-box { -webkit-user-select: text; user-select: text; }
+
 ::selection { background: var(--accent); color: var(--accent-ink); }
 
 kbd, code {
