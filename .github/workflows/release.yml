@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: release
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   # tauri.conf.json can change without a version bump; only a new version gets released.
