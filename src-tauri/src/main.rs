@@ -60,6 +60,10 @@ struct AppData {
 
 fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
+        // Closing only hides the window, so the page keeps its last tab. Reopening starts on Snippets.
+        if !window.is_visible().unwrap_or(true) {
+            let _ = app.emit_to("main", "main-reopened", ());
+        }
         let _ = window.show();
         let _ = window.unminimize();
         let _ = window.set_focus();

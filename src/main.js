@@ -277,10 +277,14 @@ function stopRecording() {
 
 // ---------- Wiring ----------
 
+function showView(name) {
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === name));
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === `view-${name}`));
+}
+
 document.querySelectorAll(".tab").forEach((tab) =>
   tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
-    document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === `view-${tab.dataset.view}`));
+    showView(tab.dataset.view);
   })
 );
 
@@ -414,4 +418,5 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 listen("data-changed", load);
+listen("main-reopened", () => showView("snippets"));
 load();
