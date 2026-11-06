@@ -18,15 +18,39 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 
 - **Inline expansion**: type a trigger like `` `pemail `` in any app (browser, Slack, Word, your editor) and it's replaced instantly.
 - **Search popup**: press `Ctrl+Shift+Space` anywhere to search snippets by name, trigger or text, then press `Enter` to paste.
-- **Placeholders**: filled in at the moment a snippet is inserted.
+- **Placeholders**: `{date}`, `{time}`, `{clipboard}` and more are filled in at the moment a snippet is inserted.
+- **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers or anything else.
 - **Stays out of the way**: lives in the tray, starts with Windows, pauses with one click.
 - **Import / export** snippets as JSON.
-- **Automatic update notifications**, with one-click install.
+- **Automatic updates**: Zap tells you when a new version is out and installs it in one click.
+
+## Using Zap
+
+### Triggers
+
+A trigger is the short text you type to insert a snippet. It needs at least 2 characters and no spaces, and one trigger can't contain another (otherwise the shorter one would always fire first).
+
+Starting triggers with `` ` `` keeps them from firing by accident, but some websites block special characters like `` ` `` or `$` in their fields. For those, use a letter-only trigger such as `zzemail`, or insert the snippet from the search popup instead.
+
+### Starter snippets
+
+New installs come with these, so you can try Zap straight away. Edit or delete them as you like.
+
+| Trigger        | Inserts                  |
+| -------------- | ------------------------ |
+| `` `pemail ``    | an example email address |
+| `` `date ``      | today's date             |
+| `` `now ``       | the date and time        |
+| `` `time ``      | the current time         |
+| `` `day ``       | the day of the week      |
+| `` `clipboard `` | whatever you last copied |
+| `` `uuid ``      | a fresh random ID        |
+| `` `iferr ``     | a Go error check         |
 
 ### Placeholders
 
-Placeholders go inside a snippet's text; they aren't triggers on their own. For example, a snippet with the trigger `` `now `` and the text `{datetime}` expands to the current date and time. New installs include one example snippet for each placeholder.
+Placeholders go inside a snippet's text; they aren't triggers on their own. For example, a snippet with the trigger `` `now `` and the text `{datetime}` expands to the current date and time.
 
 | Placeholder   | Becomes                   |
 | ------------- | ------------------------- |
@@ -36,6 +60,26 @@ Placeholders go inside a snippet's text; they aren't triggers on their own. For 
 | `{day}`       | `Sunday`                  |
 | `{clipboard}` | whatever you last copied  |
 | `{uuid}`      | a fresh random ID         |
+
+### Sensitive snippets
+
+Tick **Sensitive** in the editor for private details like an ID number. Normal snippets are pasted through the clipboard for a moment; Sensitive ones are typed key by key instead, so no other program can read them from the clipboard. They're also marked **[locked]** in the list, and their text is hidden in the search popup and left out of search.
+
+Typing takes longer than pasting, at about 50 characters a second, so keep your hands off the keyboard until it finishes. Every snippet is encrypted on disk either way, and exports include Sensitive snippets as plain text.
+
+### Tray menu and shortcuts
+
+Right-click the tray icon to open Zap, search snippets, pause Zap, check for updates or quit. In the Zap window:
+
+| Shortcut | Action          |
+| -------- | --------------- |
+| `Ctrl+N` | New snippet     |
+| `Ctrl+S` | Save snippet    |
+| `Ctrl+F` | Search the list |
+
+### Updates
+
+Zap checks GitHub for a new version when it starts and about once an hour. When one is out, you get a Windows notification and an **Install and restart** banner. You can also use **Check for updates** in the tray menu or **Settings → Updates → Check now**, and turn automatic checks off in Settings.
 
 ## Privacy
 
@@ -54,7 +98,9 @@ Don't store passwords in Zap. A password manager is the right place for those.
 
 1. Download `Zap_x.y.z_x64-setup.exe` from the [latest release](https://github.com/meojaswi/Zap/releases/latest).
 2. Run it. No admin rights are needed; it installs just for your user.
-3. Zap opens with a few example snippets. Type `` `date `` in Notepad to try it.
+3. Zap opens with a few starter snippets. Type `` `date `` in Notepad to try it.
+
+After that, Zap keeps itself up to date, so you only need to download it once.
 
 > **"Windows protected your PC"?** The installer isn't code-signed yet. Click **More info → Run anyway**.
 
@@ -84,9 +130,11 @@ Change the version in `src-tauri/tauri.conf.json` and push to `main`. GitHub Act
 │   └── src/
 │       ├── hook.rs        keyboard hook for inline expansion
 │       ├── expand.rs      placeholders + paste/type delivery
+│       ├── input.rs       synthetic keystrokes for typing and pasting
 │       ├── clipboard.rs   clipboard access, kept out of Win+V history
 │       ├── store.rs       snippets and settings
-│       └── crypto.rs      DPAPI encryption
+│       ├── crypto.rs      DPAPI encryption
+│       └── updater.rs     signed update checks and installs
 ├── site/           Landing page (React + TypeScript + Tailwind), deployed to Vercel
 └── docs/           README assets
 ```
