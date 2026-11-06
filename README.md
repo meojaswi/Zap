@@ -16,11 +16,12 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 
 ## Features
 
-- **Inline expansion**: type a trigger like `` `pemail `` in any app (browser, Slack, Word, your editor) and it's replaced instantly.
+- **Inline expansion**: type a trigger like `` `addr `` in any app (browser, Slack, Word, your editor) and it's replaced instantly.
 - **Search popup**: press `Ctrl+Shift+Space` anywhere to search snippets by name, trigger or text, then press `Enter` to paste.
 - **Placeholders**: `{date}`, `{time}`, `{clipboard}` and more are filled in at the moment a snippet is inserted.
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
-- **Excluded apps**: switch off inline expansion in games, password managers or anything else.
+- **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
+- **Usage stats**: see how often you use each snippet and roughly how much typing time Zap has saved you.
 - **Stays out of the way**: lives in the tray, starts with Windows, pauses with one click.
 - **Import / export** snippets as JSON.
 - **Automatic updates**: Zap tells you when a new version is out and installs it in one click.
@@ -90,6 +91,22 @@ Codes are case-sensitive: `MM` is the month and `mm` is minutes. Put any other w
 Tick **Sensitive** in the editor for private details like an ID number. Normal snippets are pasted through the clipboard for a moment; Sensitive ones are typed key by key instead, so no other program can read them from the clipboard. They're also marked **[locked]** in the list, and their text is hidden in the search popup and left out of search.
 
 Typing takes longer than pasting, at about 50 characters a second, so keep your hands off the keyboard until it finishes. Every snippet is encrypted on disk either way, and exports include Sensitive snippets as plain text.
+
+### Usage stats
+
+Zap counts each time a snippet is inserted, whether from a trigger or the search popup:
+
+- **Header:** your total time saved, like `⚡ 1h 9m saved`.
+- **Editor:** under each snippet's text, like `Used 128 times · last used today · saved ~8m`.
+- **Settings → Stats:** your totals, your top 5 snippets, your typing speed, an on/off switch and **Reset stats**.
+
+Time saved is an estimate: the characters you didn't have to type (the snippet's length minus the trigger's), at your typing speed. The default is 40 words a minute, and a word counts as 5 characters. Text inserted by `{clipboard}` doesn't count, since you could have pasted it anyway.
+
+### Excluded apps and remote sessions
+
+Triggers don't fire in apps listed under **Settings → Excluded apps**, one program name per line, like `valorant.exe`.
+
+Add remote-desktop apps there too: `teamviewer.exe`, `anydesk.exe` and `mstsc.exe` (Windows Remote Desktop). Your keyboard is still connected to your own PC during a remote session, so your Zap sees what you type and expands your snippets on the other computer, including Sensitive ones. Excluding these apps, or pausing Zap from the tray, stops that.
 
 ### Tray menu and shortcuts
 
