@@ -12,8 +12,6 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 
 <img src="docs/demo.gif" width="800" alt="In a Windows text editor, typing `email expands to an email address and `today to the date as DD/MM/YYYY; Ctrl+Shift+Space opens Zap's search box, which pastes a saved reply; then Zap's window shows the time it has saved">
 
-[▶ Watch it as a video](docs/demo.mp4)
-
 </div>
 
 ## Features
