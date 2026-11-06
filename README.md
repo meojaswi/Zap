@@ -110,7 +110,15 @@ Add remote-desktop apps there too: `teamviewer.exe`, `anydesk.exe` and `mstsc.ex
 
 ### Tray menu and shortcuts
 
-Right-click the tray icon to open Zap, search snippets, pause Zap, check for updates or quit. In the Zap window:
+| Tray icon         | Does                                                          |
+| ----------------- | ------------------------------------------------------------- |
+| Left click        | Opens Zap                                                     |
+| Double left click | Pauses or resumes Zap                                         |
+| Right click       | Menu: open, search snippets, pause, check for updates or quit |
+
+While Zap is paused, its tray icon turns grey with a pause badge and triggers don't fire.
+
+In the Zap window:
 
 | Shortcut | Action          |
 | -------- | --------------- |

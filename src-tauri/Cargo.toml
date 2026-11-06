@@ -1,6 +1,6 @@
 [package]
 name = "zap"
-version = "0.1.9"
+version = "0.1.10"
 description = "Zap — type, zap, done. A text expander for Windows."
 edition = "2021"
 
@@ -8,7 +8,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-dialog = "2"

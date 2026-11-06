@@ -10,14 +10,15 @@ mod store;
 mod updater;
 mod winutil;
 
-use std::sync::atomic::{AtomicIsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
-use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+use tauri::image::Image;
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, WindowEvent, Wry};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_dialog::DialogExt;
@@ -31,6 +32,14 @@ static TARGET_WINDOW: AtomicIsize = AtomicIsize::new(0);
 static HOTKEY_ERROR: Mutex<Option<String>> = Mutex::new(None);
 /// Lets code without an AppHandle (like expand::deliver) tell the windows that data changed.
 static APP: OnceLock<AppHandle> = OnceLock::new();
+/// Bumped on every tray left click, so a pending single click can tell a double click followed it.
+static TRAY_CLICKS: AtomicU64 = AtomicU64::new(0);
+/// Windows reports a double click as press, release, double click, release: the last release isn't a new click.
+static SKIP_NEXT_RELEASE: AtomicBool = AtomicBool::new(false);
+
+const PAUSED_ICON: &[u8] = include_bytes!("../icons/tray-paused.png");
+const TOOLTIP: &str = "Zap — type, zap, done";
+const PAUSED_TOOLTIP: &str = "Zap — paused";
 
 struct TrayState {
     pause: CheckMenuItem<Wry>,
@@ -89,7 +98,37 @@ fn set_paused_inner(app: &AppHandle, paused: bool) {
     if let Some(tray) = app.try_state::<TrayState>() {
         let _ = tray.pause.set_checked(paused);
     }
+    if let Some(tray) = app.tray_by_id("zap") {
+        let icon = if paused { Image::from_bytes(PAUSED_ICON).ok() } else { app.default_window_icon().cloned() };
+        let _ = tray.set_icon(icon);
+        let _ = tray.set_tooltip(Some(if paused { PAUSED_TOOLTIP } else { TOOLTIP }));
+    }
     data_changed(app);
+}
+
+/// Left click opens Zap, but only once the double-click time has passed without a second click,
+/// so a double click (pause) doesn't also open the window.
+fn tray_left_click(app: &AppHandle) {
+    if SKIP_NEXT_RELEASE.swap(false, Ordering::SeqCst) {
+        return;
+    }
+    let click = TRAY_CLICKS.fetch_add(1, Ordering::SeqCst) + 1;
+    let wait = Duration::from_millis(u64::from(unsafe {
+        windows_sys::Win32::UI::Input::KeyboardAndMouse::GetDoubleClickTime()
+    }));
+    let app = app.clone();
+    thread::spawn(move || {
+        thread::sleep(wait);
+        if TRAY_CLICKS.load(Ordering::SeqCst) == click {
+            show_main(&app);
+        }
+    });
+}
+
+fn tray_double_click(app: &AppHandle) {
+    TRAY_CLICKS.fetch_add(1, Ordering::SeqCst);
+    SKIP_NEXT_RELEASE.store(true, Ordering::SeqCst);
+    set_paused_inner(app, !shared().paused.load(Ordering::Relaxed));
 }
 
 fn save_and_notify(app: &AppHandle) -> Result<(), String> {
@@ -392,8 +431,10 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
 
     TrayIconBuilder::with_id("zap")
         .icon(app.default_window_icon().cloned().expect("app icon missing"))
-        .tooltip("Zap — type, zap, done")
+        .tooltip(TOOLTIP)
         .menu(&menu)
+        // The menu is for right click; left click opens Zap and double left click pauses it.
+        .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "open" => show_main(app),
             "search" => toggle_popup(app),
@@ -407,10 +448,12 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             "quit" => app.exit(0),
             _ => {}
         })
-        .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::DoubleClick { .. } = event {
-                show_main(tray.app_handle());
+        .on_tray_icon_event(|tray, event| match event {
+            TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } => {
+                tray_left_click(tray.app_handle())
             }
+            TrayIconEvent::DoubleClick { button: MouseButton::Left, .. } => tray_double_click(tray.app_handle()),
+            _ => {}
         })
         .build(app)?;
     Ok(())
@@ -486,7 +529,13 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{export_json, store::Snippet};
+    use super::{export_json, store::Snippet, PAUSED_ICON};
+
+    #[test]
+    fn paused_tray_icon_decodes() {
+        let icon = tauri::image::Image::from_bytes(PAUSED_ICON).unwrap();
+        assert_eq!((icon.width(), icon.height()), (64, 64));
+    }
 
     #[test]
     fn export_leaves_out_ids_and_usage_stats() {
