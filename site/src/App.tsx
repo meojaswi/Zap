@@ -43,6 +43,7 @@ const SECURITY = [
   ["clipboard", "Pastes kept out of Win+V history and cloud sync; old clipboard restored"],
   ["sensitive", "Sensitive snippets are typed key by key, never via clipboard"],
   ["keystrokes", "Never logged or saved; only the last few chars live in memory"],
+  ["stats", "Snippet use counts stay on this PC, encrypted; turn them off anytime"],
   ["network", "No account or telemetry; only connects to GitHub for signed updates, and you can turn that off"],
 ];
 

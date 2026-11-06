@@ -61,6 +61,32 @@ Placeholders go inside a snippet's text; they aren't triggers on their own. For 
 | `{clipboard}` | whatever you last copied  |
 | `{uuid}`      | a fresh random ID         |
 
+For other date and time formats, add format codes after a colon. Plain `{date}` and `{time}` keep the formats above.
+
+| You write                          | Becomes                |
+| ---------------------------------- | ---------------------- |
+| `{date:DD/MM/YYYY}`                | `06/11/2026`           |
+| `{date:D MMM YYYY}`                | `6 Nov 2026`           |
+| `{date:dddd, D MMMM}`              | `Friday, 6 November`   |
+| `{time:hh:mm A}`                   | `05:05 PM`             |
+| `{time:HH:mm:ss}`                  | `17:05:09`             |
+| `{datetime:DD/MM/YYYY hh:mm A}`    | `06/11/2026 05:05 PM`  |
+
+| Code   | Means               | Code   | Means                 |
+| ------ | ------------------- | ------ | --------------------- |
+| `YYYY` | year, `2026`        | `HH`   | hour, 24-hour, `17`   |
+| `YY`   | year, `26`          | `H`    | hour, 24-hour, no zero |
+| `MMMM` | month, `November`   | `hh`   | hour, 12-hour, `05`   |
+| `MMM`  | month, `Nov`        | `h`    | hour, 12-hour, `5`    |
+| `MM`   | month, `11`         | `mm`   | minutes, `05`         |
+| `M`    | month, no zero      | `ss`   | seconds, `09`         |
+| `DD`   | day, `06`           | `A`    | `AM` / `PM`           |
+| `D`    | day, `6`            | `a`    | `am` / `pm`           |
+| `dddd` | weekday, `Friday`   |        |                       |
+| `ddd`  | weekday, `Fri`      |        |                       |
+
+Codes are case-sensitive: `MM` is the month and `mm` is minutes. Put any other words in square brackets, like `{date:[Week of] D MMM}`, so their letters aren't read as codes.
+
 ### Sensitive snippets
 
 Tick **Sensitive** in the editor for private details like an ID number. Normal snippets are pasted through the clipboard for a moment; Sensitive ones are typed key by key instead, so no other program can read them from the clipboard. They're also marked **[locked]** in the list, and their text is hidden in the search popup and left out of search.
@@ -89,6 +115,7 @@ Inline expansion needs a keyboard hook, so Zap is built to keep as little as pos
 - Pasted text is kept **out of Win+V clipboard history and cloud sync**, and your previous clipboard text is put back.
 - Snippets marked **Sensitive** are typed key by key and never touch the clipboard.
 - Keystrokes are **never logged or saved**. Only the last few characters are held in memory to spot triggers.
+- **Usage stats stay on your PC.** Zap counts how often each snippet is used and the last date, to show the time it saves you. Nothing you type is recorded, stats are encrypted with your snippets and left out of exports, and you can turn them off or reset them in Settings.
 - **No account, no telemetry.** Zap only connects to GitHub to check for updates, and you can turn that off in Settings. No snippets or usage data are sent.
 - **Signed updates.** Zap notifies you when a new version is out and refuses any update that isn't signed.
 

@@ -32,6 +32,69 @@ function render() {
   renderStatus();
   renderList();
   renderSettings();
+  renderStats();
+  renderUsage();
+}
+
+// ---------- Stats ----------
+
+/** Seconds of typing saved: a word is 5 characters, at the user's words per minute. */
+function secondsSaved(chars) {
+  return (chars * 60) / (5 * (state.settings.typingWpm || 40));
+}
+
+function formatDuration(seconds) {
+  if (seconds < 60) return `${Math.max(1, Math.round(seconds))}s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
+function formatLastUsed(date) {
+  if (!date) return "";
+  const days = Math.round((new Date(new Date().toDateString()) - new Date(date + "T00:00")) / 86400000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days} days ago`;
+  return new Date(date + "T00:00").toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function totals() {
+  return state.snippets.reduce((t, s) => ({ uses: t.uses + (s.uses || 0), chars: t.chars + (s.charsSaved || 0) }), { uses: 0, chars: 0 });
+}
+
+function renderStats() {
+  const { uses, chars } = totals();
+  const on = state.settings.keepStats;
+  $("keep-stats").checked = on;
+  const saved = $("saved-total");
+  saved.hidden = !on || chars === 0;
+  saved.innerHTML = `<span class="bolt">⚡</span> ${formatDuration(secondsSaved(chars))} saved`;
+
+  $("stats-totals").innerHTML = !on
+    ? "Stats are off, so nothing is being counted."
+    : uses
+    ? `<strong>${uses.toLocaleString()}</strong> expansions · <strong>${chars.toLocaleString()}</strong> characters · <strong>~${formatDuration(secondsSaved(chars))}</strong> saved`
+    : "Nothing yet. Use a trigger and your stats show up here.";
+  const top = state.snippets.filter((s) => s.uses > 0).sort((a, b) => b.uses - a.uses).slice(0, 5);
+  $("stats-top").innerHTML = top
+    .map(
+      (s) => `<li><span class="item-trigger">${escapeHtml(s.trigger)}</span><span class="stats-name">${escapeHtml(s.name)}</span>
+        <span class="stats-num">×${s.uses.toLocaleString()} · ~${formatDuration(secondsSaved(s.charsSaved || 0))}</span></li>`
+    )
+    .join("");
+  if (document.activeElement !== $("wpm")) $("wpm").value = state.settings.typingWpm;
+}
+
+/** "Used 128 times · last used today · saved ~9 min" under the snippet's text in the editor. */
+function renderUsage() {
+  const usage = $("f-usage");
+  const snippet = state.snippets.find((s) => s.id === selectedId);
+  usage.hidden = !snippet || !state.settings.keepStats;
+  if (!snippet) return;
+  usage.textContent = snippet.uses
+    ? `Used ${snippet.uses.toLocaleString()} ${snippet.uses === 1 ? "time" : "times"} · last used ${formatLastUsed(snippet.lastUsed)} · saved ~${formatDuration(secondsSaved(snippet.charsSaved || 0))}`
+    : "Not used yet";
 }
 
 function renderStatus() {
@@ -85,6 +148,7 @@ function select(id) {
   $("f-content").value = snippet?.content ?? "";
   $("f-sensitive").checked = snippet?.sensitive ?? false;
   $("delete-btn").hidden = creating;
+  renderUsage();
   updatePreview();
   renderList();
   (creating ? $("f-name") : $("f-content")).focus();
@@ -95,6 +159,7 @@ function closeEditor() {
   $("form").hidden = true;
   $("welcome").hidden = false;
   renderList();
+  renderUsage();
 }
 
 let previewTimer;
@@ -102,7 +167,7 @@ function updatePreview() {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(async () => {
     const content = $("f-content").value;
-    $("preview-field").hidden = !/\{(date|time|datetime|day|clipboard|uuid)\}/.test(content);
+    $("preview-field").hidden = !/\{(date|time|datetime|day|clipboard|uuid)(:[^}]*)?\}/.test(content);
     if (!$("preview-field").hidden) $("preview").textContent = await invoke("preview", { content });
   }, 150);
 }
@@ -283,6 +348,31 @@ $("update-install").addEventListener("click", async () => {
     toast(`Couldn't install the update: ${e}`, true);
     button.disabled = false;
     button.textContent = "Install and restart";
+  }
+});
+
+$("keep-stats").addEventListener("change", (e) =>
+  updateSettings({ keepStats: e.target.checked }, e.target.checked ? "Usage stats on" : "Usage stats off. Nothing will be counted.")
+);
+
+$("wpm").addEventListener("change", (e) => {
+  const wpm = Math.round(Number(e.target.value));
+  if (!wpm || wpm < 5 || wpm > 300) {
+    toast("Typing speed must be between 5 and 300 words per minute", true);
+    renderStats();
+    return;
+  }
+  updateSettings({ typingWpm: wpm }, `Typing speed set to ${wpm} wpm`);
+});
+
+$("stats-reset").addEventListener("click", async () => {
+  if (!confirm("Reset all usage stats? Your snippets stay as they are.")) return;
+  try {
+    await invoke("reset_stats");
+    await load();
+    toast("Stats reset");
+  } catch (e) {
+    toast(e, true);
   }
 });
 

@@ -15,6 +15,7 @@
         <button class="tab" data-view="settings">Settings</button>
       </nav>
       <div class="spacer"></div>
+      <span class="saved-total" id="saved-total" title="Estimated typing time Zap has saved you" hidden></span>
       <button class="status-pill" id="status" title="Pause or resume Zap"><span class="dot"></span><span id="status-text">Active</span></button>
     </header>
 
@@ -56,6 +57,7 @@
           <div class="field">
             <label for="f-content">Text</label>
             <textarea class="textarea" id="f-content" placeholder="your.email@example.com" spellcheck="false"></textarea>
+            <div class="hint usage" id="f-usage" hidden></div>
             <div class="hint" style="margin-bottom:6px">Click to insert a placeholder:</div>
             <div class="chips">
               <button type="button" class="chip" data-ph="{date}">{date}</button>
@@ -65,6 +67,7 @@
               <button type="button" class="chip" data-ph="{clipboard}">{clipboard}</button>
               <button type="button" class="chip" data-ph="{uuid}">{uuid}</button>
             </div>
+            <div class="hint" style="margin-top:8px">Other formats: add codes after a colon, like <code>{date:DD/MM/YYYY}</code> or <code>{time:hh:mm A}</code>. Codes: <code>YYYY</code> <code>YY</code> <code>MMMM</code> <code>MMM</code> <code>MM</code> <code>DD</code> <code>D</code> <code>dddd</code> <code>ddd</code> for dates; <code>HH</code> (24-hour) <code>hh</code> (12-hour) <code>mm</code> <code>ss</code> <code>A</code> (AM/PM) for times. Put other words in [brackets].</div>
           </div>
 
           <div class="field" id="preview-field">
@@ -139,6 +142,23 @@
           </div>
 
           <div class="card">
+            <div class="card-row">
+              <div style="flex:1">
+                <h3>Stats</h3>
+                <p style="margin:0">Counts how often each snippet is used and the last date, to estimate the typing time Zap saves you. Nothing you type is recorded, and stats stay on this PC, encrypted. Turn this off to stop counting.</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="keep-stats"><span class="slider"></span></label>
+            </div>
+            <div class="stats-totals" id="stats-totals"></div>
+            <ol class="stats-top" id="stats-top"></ol>
+            <div class="card-row" style="margin-top:12px">
+              <label for="wpm" style="flex:1">Typing speed (words per minute)</label>
+              <input class="input wpm-input" id="wpm" type="number" min="5" max="300" step="5">
+            </div>
+            <div class="actions" style="margin-top:10px"><button class="btn danger" id="stats-reset">Reset stats</button></div>
+          </div>
+
+          <div class="card">
             <h3>Backup</h3>
             <p>Export saves your snippets as a <strong>plain, unencrypted</strong> JSON file, so keep it somewhere safe. Importing updates snippets with the same trigger.</p>
             <div class="actions">
@@ -154,6 +174,7 @@
               <li>Pasted text is kept out of Win+V clipboard history and cloud clipboard sync, and your previous clipboard text is put back.</li>
               <li>Sensitive snippets are typed key by key and never go through the clipboard.</li>
               <li>Keystrokes are never written to disk or logged.</li>
+              <li>Usage stats (how often each snippet is used, and the last date) stay on this PC, encrypted. You can turn them off or reset them above.</li>
               <li>The only thing Zap connects to is GitHub, to check for updates. You can turn that off above.</li>
               <li>Updates are signed, and Zap refuses any download that isn't.</li>
               <li>Don't store passwords here. A password manager is the right place for those.</li>

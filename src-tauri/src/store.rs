@@ -21,6 +21,15 @@ pub struct Snippet {
     /// Sensitive snippets are typed out instead of pasted, so they never touch the clipboard.
     #[serde(default)]
     pub sensitive: bool,
+    /// Usage stats: only counts and the date are kept, never what was typed around the snippet.
+    #[serde(default)]
+    pub uses: u64,
+    /// Characters the user didn't have to type, summed over every use.
+    #[serde(default)]
+    pub chars_saved: u64,
+    /// Local date of the last use, as YYYY-MM-DD.
+    #[serde(default)]
+    pub last_used: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -33,11 +42,15 @@ pub struct Settings {
     pub excluded_apps: Vec<String>,
     /// Look for new versions on GitHub at startup and about once an hour.
     pub check_updates: bool,
+    /// Typing speed in words per minute, used to turn characters saved into time saved.
+    pub typing_wpm: u32,
+    /// Count how often each snippet is used. Off means nothing is recorded.
+    pub keep_stats: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true }
+        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true }
     }
 }
 
@@ -97,6 +110,9 @@ fn seed() -> Data {
         trigger: trigger.into(),
         content: content.into(),
         sensitive: false,
+        uses: 0,
+        chars_saved: 0,
+        last_used: None,
     };
     Data {
         snippets: vec![
@@ -163,6 +179,15 @@ pub fn normalize_app(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{seed, validate};
+
+    #[test]
+    fn snippets_saved_before_stats_still_load() {
+        let snippet: super::Snippet = serde_json::from_str(r#"{"id":"1","trigger":"`a","content":"x"}"#).unwrap();
+        assert_eq!((snippet.uses, snippet.chars_saved, snippet.last_used), (0, 0, None));
+        let settings: super::Settings = serde_json::from_str(r#"{"hotkey":"F13"}"#).unwrap();
+        assert_eq!(settings.typing_wpm, 40);
+        assert!(settings.keep_stats);
+    }
 
     #[test]
     fn seed_snippets_are_valid_together() {

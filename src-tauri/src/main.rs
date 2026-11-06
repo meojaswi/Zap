@@ -11,7 +11,7 @@ mod updater;
 mod winutil;
 
 use std::sync::atomic::{AtomicIsize, Ordering};
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
 
@@ -29,6 +29,8 @@ use store::{normalize_app, shared, Settings, Snippet};
 /// The window that was focused before the popup opened; the snippet gets pasted back into it.
 static TARGET_WINDOW: AtomicIsize = AtomicIsize::new(0);
 static HOTKEY_ERROR: Mutex<Option<String>> = Mutex::new(None);
+/// Lets code without an AppHandle (like expand::deliver) tell the windows that data changed.
+static APP: OnceLock<AppHandle> = OnceLock::new();
 
 struct TrayState {
     pause: CheckMenuItem<Wry>,
@@ -124,12 +126,52 @@ fn save_snippet(app: AppHandle, mut snippet: Snippet) -> Result<Snippet, String>
             snippet.id = store::new_id();
         }
         match data.snippets.iter_mut().find(|s| s.id == snippet.id) {
-            Some(existing) => *existing = snippet.clone(),
+            Some(existing) => {
+                // The editor doesn't send stats, so keep the ones already counted.
+                keep_stats(existing, &mut snippet);
+                *existing = snippet.clone();
+            }
             None => data.snippets.push(snippet.clone()),
         }
     }
     save_and_notify(&app)?;
     Ok(snippet)
+}
+
+fn keep_stats(from: &Snippet, to: &mut Snippet) {
+    to.uses = from.uses;
+    to.chars_saved = from.chars_saved;
+    to.last_used = from.last_used.clone();
+}
+
+/// Counts one use of a snippet for the stats, then saves and refreshes the windows.
+pub(crate) fn record_use(id: &str, chars_saved: usize) {
+    {
+        let mut data = shared().data.write().unwrap();
+        if !data.settings.keep_stats {
+            return;
+        }
+        let Some(snippet) = data.snippets.iter_mut().find(|s| s.id == id) else { return };
+        snippet.uses += 1;
+        snippet.chars_saved += chars_saved as u64;
+        snippet.last_used = Some(chrono::Local::now().format("%Y-%m-%d").to_string());
+    }
+    if let Err(e) = shared().save() {
+        eprintln!("Zap: couldn't save stats: {e}");
+    }
+    if let Some(app) = APP.get() {
+        data_changed(app);
+    }
+}
+
+#[tauri::command]
+fn reset_stats(app: AppHandle) -> Result<(), String> {
+    for snippet in shared().data.write().unwrap().snippets.iter_mut() {
+        snippet.uses = 0;
+        snippet.chars_saved = 0;
+        snippet.last_used = None;
+    }
+    save_and_notify(&app)
 }
 
 #[tauri::command]
@@ -141,6 +183,7 @@ fn delete_snippet(app: AppHandle, id: String) -> Result<(), String> {
 #[tauri::command]
 fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String> {
     settings.hotkey = settings.hotkey.trim().to_string();
+    settings.typing_wpm = settings.typing_wpm.clamp(5, 300);
     settings.excluded_apps = settings
         .excluded_apps
         .iter()
@@ -210,9 +253,10 @@ fn preview(content: String) -> String {
     expand::render(&content)
 }
 
-/// Snippets in an export file; ids are optional so hand-written files work too.
-#[derive(Deserialize)]
-struct ImportedSnippet {
+/// A snippet as written to and read from an export file. Ids and usage stats stay out of the file,
+/// and fields are optional so hand-written files import too.
+#[derive(Serialize, Deserialize)]
+struct FileSnippet {
     #[serde(default)]
     name: String,
     trigger: String,
@@ -228,6 +272,19 @@ struct ImportResult {
 }
 
 // Async so the blocking file dialog runs off the main thread.
+fn export_json(snippets: &[Snippet]) -> Result<String, String> {
+    let file: Vec<FileSnippet> = snippets
+        .iter()
+        .map(|s| FileSnippet {
+            name: s.name.clone(),
+            trigger: s.trigger.clone(),
+            content: s.content.clone(),
+            sensitive: s.sensitive,
+        })
+        .collect();
+    serde_json::to_string_pretty(&file).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 async fn export_snippets(app: AppHandle) -> Result<Option<usize>, String> {
     let Some(path) = app
@@ -241,7 +298,7 @@ async fn export_snippets(app: AppHandle) -> Result<Option<usize>, String> {
     };
     let path = path.into_path().map_err(|e| e.to_string())?;
     let snippets = shared().data.read().unwrap().snippets.clone();
-    let json = serde_json::to_string_pretty(&snippets).map_err(|e| e.to_string())?;
+    let json = export_json(&snippets)?;
     std::fs::write(path, json).map_err(|e| e.to_string())?;
     Ok(Some(snippets.len()))
 }
@@ -253,7 +310,7 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
     };
     let path = path.into_path().map_err(|e| e.to_string())?;
     let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let incoming: Vec<ImportedSnippet> =
+    let incoming: Vec<FileSnippet> =
         serde_json::from_str(&text).map_err(|e| format!("Not a Zap snippets file: {e}"))?;
 
     let mut result = ImportResult { imported: 0, skipped: Vec::new() };
@@ -273,6 +330,9 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
                 trigger: item.trigger.trim().to_string(),
                 content: item.content,
                 sensitive: item.sensitive,
+                uses: 0,
+                chars_saved: 0,
+                last_used: None,
             };
             if snippet.name.trim().is_empty() {
                 snippet.name = snippet.trigger.clone();
@@ -285,6 +345,7 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
                 snippet.id = store::new_id();
                 data.snippets.push(snippet);
             } else if let Some(existing) = data.snippets.iter_mut().find(|s| s.id == snippet.id) {
+                keep_stats(existing, &mut snippet);
                 *existing = snippet;
             }
             result.imported += 1;
@@ -381,6 +442,7 @@ fn main() {
             hook::set_enabled(settings.inline_enabled);
             build_tray(app)?;
             updater::start(handle.clone());
+            let _ = APP.set(handle.clone());
             if !std::env::args().any(|a| a == "--minimized") {
                 show_main(&handle);
             }
@@ -410,7 +472,8 @@ fn main() {
             export_snippets,
             import_snippets,
             check_for_updates,
-            install_update
+            install_update,
+            reset_stats
         ])
         .build(tauri::generate_context!())
         .expect("error while building Zap");
@@ -419,4 +482,27 @@ fn main() {
     // so the store has to be ready before the app starts running.
     store::init(app.path().app_data_dir().expect("no app data folder"));
     app.run(|_, _| {});
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{export_json, store::Snippet};
+
+    #[test]
+    fn export_leaves_out_ids_and_usage_stats() {
+        let snippet = Snippet {
+            id: "secret-id".into(),
+            name: "Aadhar".into(),
+            trigger: "`aadhar".into(),
+            content: "123456789012".into(),
+            sensitive: true,
+            uses: 12,
+            chars_saved: 60,
+            last_used: Some("2026-11-06".into()),
+        };
+        let json = export_json(&[snippet]).unwrap();
+        let fields: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let keys: Vec<&str> = fields[0].as_object().unwrap().keys().map(String::as_str).collect();
+        assert_eq!(keys, ["content", "name", "sensitive", "trigger"]);
+    }
 }
