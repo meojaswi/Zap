@@ -8,12 +8,14 @@ interface Example {
   summary: string;
 }
 
-const today = new Date().toISOString().slice(0, 10);
+const now = new Date();
+// Same as {date:DD/MM/YYYY}, one of the custom formats.
+const today = [now.getDate(), now.getMonth() + 1].map((n) => String(n).padStart(2, "0")).join("/") + "/" + now.getFullYear();
 
 const EXAMPLES: Example[] = [
-  { app: "gmail", before: "Sure, reach me at ", trigger: "`pemail", expansion: "your.email@example.com", summary: "email" },
-  { app: "notes", before: "Standup — ", trigger: "`date", expansion: today, summary: "{date}" },
-  { app: "code.exe", before: "", trigger: "`iferr", expansion: "if err != nil {\n\treturn err\n}", summary: "3 lines" },
+  { app: "gmail", before: "Sure, reach me at ", trigger: "`email", expansion: "you@example.com", summary: "email" },
+  { app: "notes", before: "Report date: ", trigger: "`today", expansion: today, summary: "{date:DD/MM/YYYY}" },
+  { app: "slack", before: "", trigger: "`thx", expansion: "Thanks for reaching out! I'll get back to you by tomorrow.", summary: "reply" },
 ];
 
 type Phase = "typing" | "expanded";

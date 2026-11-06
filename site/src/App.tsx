@@ -17,9 +17,9 @@ const METRICS = [
 ];
 
 const TRIGGERS = [
-  ["`pemail", "your.email@example.com"],
+  ["`email", "you@example.com"],
   ["`addr", "221B Example Street, London"],
-  ["`sig", "— Ojaswi · sent from Zap"],
+  ["`thx", "Thanks for reaching out! I'll get back to you…"],
 ];
 
 const PLACEHOLDERS = [
@@ -29,10 +29,12 @@ const PLACEHOLDERS = [
   ["{day}", "Sunday"],
   ["{clipboard}", "what you copied"],
   ["{uuid}", "fresh random id"],
+  ["{date:DD/MM/YYYY}", "07/11/2026"],
+  ["{time:hh:mm A}", "05:05 PM"],
 ];
 
 const CONTROLS = [
-  ["pause", "One click in the tray stops all expansion.", "toggle"],
+  ["pause", "Double-click the tray icon to stop all expansion.", "toggle"],
   ["excluded apps", "Inline mode stays off in games or apps you list.", "list"],
   ["start with windows", "Launches quietly into the tray at sign-in.", "toggle"],
   ["import / export", "Back up or move snippets as JSON.", "file"],

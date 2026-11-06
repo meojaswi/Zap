@@ -1,5 +1,5 @@
 const ROWS = [
-  ["`pemail", "personal email", "your.email@example.com"],
+  ["`email", "work email", "you@example.com"],
   ["`addr", "home address", "221B Example Street, …"],
   ["`thx", "thanks reply", "Thanks for reaching out! I'll …"],
 ];
