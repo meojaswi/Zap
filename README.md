@@ -22,7 +22,7 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
 - **Usage stats**: see how often you use each snippet and roughly how much typing time Zap has saved you.
-- **Stays out of the way**: lives in the tray, starts with Windows, pauses with one click.
+- **Stays out of the way**: lives in the tray, starts with Windows, and pauses with a double-click on the tray icon.
 - **Import / export** snippets as JSON.
 - **Automatic updates**: Zap tells you when a new version is out and installs it in one click.
 
@@ -118,6 +118,8 @@ Add remote-desktop apps there too: `teamviewer.exe`, `anydesk.exe` and `mstsc.ex
 
 While Zap is paused, its tray icon turns grey with a pause badge and triggers don't fire.
 
+Closing the Zap window keeps Zap running in the tray, and it reopens on the Snippets tab. To stop it completely, use **Quit Zap** in the tray menu.
+
 In the Zap window:
 
 | Shortcut | Action          |
@@ -143,6 +145,17 @@ Inline expansion needs a keyboard hook, so Zap is built to keep as little as pos
 - **Signed updates.** Zap notifies you when a new version is out and refuses any update that isn't signed.
 
 Don't store passwords in Zap. A password manager is the right place for those.
+
+### If someone else gets your laptop
+
+Encryption protects your snippets while your PC is **locked or switched off**: without your Windows sign-in, nobody can read them, even with the drive taken out. But anyone using your **unlocked** Windows account counts as you, so they can open Zap, see your snippets and use your triggers.
+
+To keep details like ID numbers safe:
+
+- Lock your PC whenever you step away: `Win + L`.
+- Turn on a short screen timeout, and under **Settings → Accounts → Sign-in options** set Windows to ask you to sign in again **every time** you've been away.
+- Turn on **Device encryption** or **BitLocker** under **Settings → Privacy & security**.
+- Use a PIN that isn't easy to guess, and turn on **Find my device**.
 
 ## Install
 
