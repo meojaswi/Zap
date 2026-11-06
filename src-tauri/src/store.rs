@@ -116,7 +116,6 @@ fn seed() -> Data {
     };
     Data {
         snippets: vec![
-            snippet("Personal email", "`pemail", "your.email@example.com"),
             snippet("Today's date", "`date", "{date}"),
             // `now rather than `datetime: `date is part of `datetime, so they couldn't coexist.
             snippet("Date and time", "`now", "{datetime}"),
@@ -124,7 +123,6 @@ fn seed() -> Data {
             snippet("Day of the week", "`day", "{day}"),
             snippet("Paste clipboard", "`clipboard", "{clipboard}"),
             snippet("Random ID", "`uuid", "{uuid}"),
-            snippet("Go error check", "`iferr", "if err != nil {\n\treturn err\n}"),
         ],
         settings: Settings::default(),
     }

@@ -39,14 +39,12 @@ New installs come with these, so you can try Zap straight away. Edit or delete t
 
 | Trigger        | Inserts                  |
 | -------------- | ------------------------ |
-| `` `pemail ``    | an example email address |
 | `` `date ``      | today's date             |
 | `` `now ``       | the date and time        |
 | `` `time ``      | the current time         |
 | `` `day ``       | the day of the week      |
 | `` `clipboard `` | whatever you last copied |
 | `` `uuid ``      | a fresh random ID        |
-| `` `iferr ``     | a Go error check         |
 
 ### Placeholders
 

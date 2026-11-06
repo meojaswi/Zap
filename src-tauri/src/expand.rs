@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn clipboard_text_is_not_counted_as_saved() {
-        assert_eq!(super::chars_saved("ojaswi3236@gmail.com", "`pemail"), 13);
+        assert_eq!(super::chars_saved("someone@example.com", "`email"), 13);
         assert_eq!(super::chars_saved("{clipboard}", "`clipboard"), 0);
         assert_eq!(super::chars_saved("Quote: {clipboard}", "`q"), 5);
         assert_eq!(super::chars_saved("hi", "`longtrigger"), 0);
