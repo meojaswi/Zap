@@ -29,7 +29,8 @@ pub fn deliver(snippet: &Snippet, backspaces: usize) {
     sleep(Duration::from_millis(30));
     if backspaces > 0 {
         input::backspaces(backspaces);
-        sleep(Duration::from_millis(20));
+        // Let the app finish deleting before the snippet arrives.
+        sleep(Duration::from_millis(50));
     }
 
     // Typing avoids the clipboard entirely: used for sensitive snippets, and when the clipboard
