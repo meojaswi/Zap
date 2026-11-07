@@ -161,7 +161,14 @@ fn handle_key(vk: u32, scan: u32) -> bool {
     let snippet = snippet.clone();
     // The final key is swallowed, so only the characters already typed need deleting.
     let typed = typed_trigger.chars().count() - 1;
-    thread::spawn(move || expand::deliver(&snippet, typed));
+    if expand::input_labels(&snippet.content).is_empty() {
+        thread::spawn(move || expand::deliver(&snippet, typed));
+    } else {
+        // Ask for the fill-ins first. If the user cancels, the swallowed key is typed back.
+        let target = winutil::foreground_window();
+        let swallowed = typed_trigger.chars().last();
+        thread::spawn(move || crate::request_fill(snippet, typed, target, swallowed));
+    }
     true
 }
 

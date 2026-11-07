@@ -2,6 +2,6 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Permissions for Zap's windows",
-  "windows": ["main", "popup"],
+  "windows": ["main", "popup", "fill"],
   "permissions": ["core:default"]
 }

@@ -1,6 +1,6 @@
 [package]
 name = "zap"
-version = "0.1.15"
+version = "0.1.16"
 description = "Zap — type, zap, done. A text expander for Windows."
 edition = "2021"
 

@@ -169,7 +169,7 @@ function updatePreview() {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(async () => {
     const content = $("f-content").value;
-    $("preview-field").hidden = !/\{(date|time|datetime|day|clipboard|uuid)(:[^}]*)?\}/.test(content);
+    $("preview-field").hidden = !/\{(date|time|datetime|day|clipboard|uuid|input)(:[^}]*)?\}/.test(content);
     if (!$("preview-field").hidden) $("preview").textContent = await invoke("preview", { content });
   }, 150);
 }

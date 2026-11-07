@@ -86,6 +86,18 @@ For other date and time formats, add format codes after a colon. Plain `{date}` 
 | `dddd` | weekday, `Friday`   |        |                       |
 | `ddd`  | weekday, `Fri`      |        |                       |
 
+### Fill-in placeholders
+
+For messages that change each time, add `{input:Label}` wherever a value goes:
+
+```
+Dear {input:Name},
+
+Your order {input:Order no} has shipped and will reach you by {input:Date}.
+```
+
+When you use the snippet, Zap opens a small box with one field per label: Name, Order no and Date. Press `Enter` to move to the next field, and `Enter` on the last one to insert the message with your values. `Esc` or clicking away cancels and leaves your trigger as you typed it. A label used more than once is asked once, a snippet can have up to 10 fill-ins, and they work from the search popup too. The editor preview shows them as `[Name]`.
+
 Codes are case-sensitive: `MM` is the month and `mm` is minutes. Put any other words in square brackets, like `{date:[Week of] D MMM}`, so their letters aren't read as codes.
 
 ### Sensitive snippets

@@ -1,5 +1,6 @@
 //! Turns a snippet into text and puts it where the user is typing.
 
+use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -74,6 +75,39 @@ fn fill_custom_formats(text: &str, name: &str, now: &chrono::DateTime<chrono::Lo
     out
 }
 
+const MAX_FILL_INS: usize = 10;
+
+/// The labels of the snippet's {input:Label} fill-ins, in order, each once.
+pub fn input_labels(content: &str) -> Vec<String> {
+    let mut labels = Vec::new();
+    let mut rest = content;
+    while let Some(start) = rest.find("{input:") {
+        let after = &rest[start + "{input:".len()..];
+        let Some(end) = after.find('}') else { break };
+        let label = after[..end].trim();
+        if !label.is_empty() && !labels.iter().any(|l| l == label) && labels.len() < MAX_FILL_INS {
+            labels.push(label.to_string());
+        }
+        rest = &after[end + 1..];
+    }
+    labels
+}
+
+/// Replaces each {input:Label} with the value given for it, or nothing if there isn't one.
+pub fn fill_inputs(text: &str, values: &HashMap<String, String>) -> String {
+    let mut out = String::new();
+    let mut rest = text;
+    while let Some(start) = rest.find("{input:") {
+        let after = &rest[start + "{input:".len()..];
+        let Some(end) = after.find('}') else { break };
+        out.push_str(&rest[..start]);
+        out.push_str(values.get(after[..end].trim()).map_or("", String::as_str));
+        rest = &after[end + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
 /// Fills in placeholders like {date} and {clipboard}.
 pub fn render(content: &str) -> String {
     render_at(content, chrono::Local::now())
@@ -100,16 +134,23 @@ fn render_at(content: &str, now: chrono::DateTime<chrono::Local>) -> String {
 
 /// Deletes `backspaces` typed characters, inserts the snippet, then counts the use.
 pub fn deliver(snippet: &Snippet, backspaces: usize) {
-    let text = render(&snippet.content);
+    deliver_filled(snippet, backspaces, &HashMap::new());
+}
+
+/// Like `deliver`, with the values the user entered for the snippet's {input:...} fill-ins.
+/// Placeholders are filled first, so a typed value like "{date}" is inserted as written.
+pub fn deliver_filled(snippet: &Snippet, backspaces: usize, values: &HashMap<String, String>) {
+    let text = fill_inputs(&render(&snippet.content), values);
     insert(&text, snippet.sensitive, backspaces);
     // Inline, the trigger typed was `backspaces` + 1 characters (it may be the secondary one).
     let typed = if backspaces > 0 { backspaces + 1 } else { snippet.trigger.chars().count() };
     crate::record_use(&snippet.id, chars_saved(&snippet.content, typed));
 }
 
-/// Characters the user didn't type. Text from {clipboard} doesn't count: they'd have pasted it anyway.
+/// Characters the user didn't type. Text from {clipboard} doesn't count (they'd have pasted it
+/// anyway), and neither do fill-in values, which the user typed themselves.
 fn chars_saved(content: &str, trigger_len: usize) -> usize {
-    let typed_for_you = render(&content.replace("{clipboard}", "")).chars().count();
+    let typed_for_you = fill_inputs(&render(&content.replace("{clipboard}", "")), &HashMap::new()).chars().count();
     typed_for_you.saturating_sub(trigger_len)
 }
 
@@ -198,6 +239,37 @@ mod tests {
         assert_eq!(super::chars_saved("{clipboard}", 10), 0);
         assert_eq!(super::chars_saved("Quote: {clipboard}", 2), 5);
         assert_eq!(super::chars_saved("hi", 12), 0);
+    }
+
+    #[test]
+    fn input_labels_are_found_once_each_in_order() {
+        use super::input_labels;
+        assert_eq!(input_labels("Dear {input:Name}, order {input: Order no } by {input:Date}. Bye {input:Name}"),
+                   ["Name", "Order no", "Date"]);
+        assert_eq!(input_labels("no fill-ins {date}"), Vec::<String>::new());
+        assert_eq!(input_labels("{input:} {input:   } {input:Open"), Vec::<String>::new());
+    }
+
+    #[test]
+    fn fill_inputs_puts_each_value_everywhere_its_label_appears() {
+        use std::collections::HashMap;
+        let values = HashMap::from([("Name".to_string(), "Rahul".to_string()), ("Order no".to_string(), "A12".to_string())]);
+        assert_eq!(super::fill_inputs("Hi {input:Name}, #{input: Order no }. Bye {input:Name}", &values), "Hi Rahul, #A12. Bye Rahul");
+        assert_eq!(super::fill_inputs("Missing {input:Date}.", &values), "Missing .");
+    }
+
+    #[test]
+    fn typed_values_are_not_treated_as_placeholders() {
+        use std::collections::HashMap;
+        let values = HashMap::from([("Note".to_string(), "{date}".to_string())]);
+        let text = super::fill_inputs(&at("On {date}: {input:Note}"), &values);
+        assert_eq!(text, "On 2026-11-06: {date}");
+    }
+
+    #[test]
+    fn fill_in_values_are_not_counted_as_saved() {
+        assert_eq!(super::chars_saved("Hi {input:Name}!", 3), 1); // "Hi !" is 4, minus a 3-character trigger
+        assert_eq!(super::chars_saved("Hello there {input:Name}", 4), 8);
     }
 
     #[test]

@@ -12,6 +12,7 @@ mod usage;
 mod winutil;
 
 use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU64, Ordering};
+use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
@@ -37,6 +38,25 @@ static APP: OnceLock<AppHandle> = OnceLock::new();
 static TRAY_CLICKS: AtomicU64 = AtomicU64::new(0);
 /// Windows reports a double click as press, release, double click, release: the last release isn't a new click.
 static SKIP_NEXT_RELEASE: AtomicBool = AtomicBool::new(false);
+
+/// A snippet waiting for its {input:...} values in the fill-in window.
+struct FillRequest {
+    snippet: Snippet,
+    /// Trigger characters still in the target app, deleted once the values are entered.
+    backspaces: usize,
+    /// The window the snippet goes into.
+    target: isize,
+    /// The trigger's swallowed last key, typed back if the user cancels.
+    swallowed: Option<char>,
+}
+
+static FILL: Mutex<Option<FillRequest>> = Mutex::new(None);
+
+#[derive(Serialize, Clone)]
+struct FillPrompt {
+    name: String,
+    labels: Vec<String>,
+}
 
 const PAUSED_ICON: &[u8] = include_bytes!("../icons/tray-paused.png");
 const TOOLTIP: &str = "Zap — type, zap, done";
@@ -285,6 +305,10 @@ fn insert_snippet(app: AppHandle, id: String) -> Result<(), String> {
         let _ = popup.hide();
     }
     let target = TARGET_WINDOW.load(Ordering::SeqCst);
+    if !expand::input_labels(&snippet.content).is_empty() {
+        request_fill(snippet, 0, target, None);
+        return Ok(());
+    }
     thread::spawn(move || {
         thread::sleep(Duration::from_millis(60));
         winutil::focus_window(target);
@@ -292,6 +316,51 @@ fn insert_snippet(app: AppHandle, id: String) -> Result<(), String> {
         expand::deliver(&snippet, 0);
     });
     Ok(())
+}
+
+/// Shows the fill-in window for a snippet with {input:...} placeholders.
+pub(crate) fn request_fill(snippet: Snippet, backspaces: usize, target: isize, swallowed: Option<char>) {
+    let Some(app) = APP.get() else { return };
+    let prompt = FillPrompt { name: snippet.name.clone(), labels: expand::input_labels(&snippet.content) };
+    *FILL.lock().unwrap() = Some(FillRequest { snippet, backspaces, target, swallowed });
+    if let Some(window) = app.get_webview_window("fill") {
+        let _ = window.center();
+        let _ = window.show();
+        let _ = window.set_focus();
+        let _ = app.emit_to("fill", "fill-request", prompt);
+    }
+}
+
+/// Hides the fill-in window and returns focus to the app the snippet goes into.
+fn finish_fill(app: &AppHandle, then: impl FnOnce(FillRequest) + Send + 'static) {
+    let Some(request) = FILL.lock().unwrap().take() else { return };
+    if let Some(window) = app.get_webview_window("fill") {
+        let _ = window.hide();
+    }
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(60));
+        winutil::focus_window(request.target);
+        thread::sleep(Duration::from_millis(120));
+        then(request);
+    });
+}
+
+#[tauri::command]
+fn fill_submit(app: AppHandle, values: HashMap<String, String>) {
+    finish_fill(&app, move |request| expand::deliver_filled(&request.snippet, request.backspaces, &values));
+}
+
+#[tauri::command]
+fn fill_cancel(app: AppHandle) {
+    cancel_fill(&app);
+}
+
+fn cancel_fill(app: &AppHandle) {
+    finish_fill(app, |request| {
+        if let Some(key) = request.swallowed {
+            input::type_text(&key.to_string());
+        }
+    });
 }
 
 #[tauri::command]
@@ -304,7 +373,9 @@ fn hide_popup(app: AppHandle) {
 
 #[tauri::command]
 fn preview(content: String) -> String {
-    expand::render(&content)
+    // Fill-ins show as [Label], since their values are only known when the snippet is used.
+    let shown = expand::input_labels(&content).into_iter().map(|l| (l.clone(), format!("[{l}]"))).collect();
+    expand::fill_inputs(&expand::render(&content), &shown)
 }
 
 /// A snippet as written to and read from an export file. Ids and usage stats stay out of the file,
@@ -516,6 +587,8 @@ fn main() {
             WindowEvent::Focused(false) if window.label() == "popup" => {
                 let _ = window.hide();
             }
+            // Clicking away from the fill-in window cancels it, like Esc.
+            WindowEvent::Focused(false) if window.label() == "fill" => cancel_fill(window.app_handle()),
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
@@ -532,7 +605,9 @@ fn main() {
             import_snippets,
             check_for_updates,
             install_update,
-            reset_stats
+            reset_stats,
+            fill_submit,
+            fill_cancel
         ])
         .build(tauri::generate_context!())
         .expect("error while building Zap");
