@@ -62,6 +62,9 @@ button, input, textarea { font: inherit; color: inherit; }
 
 /* An app, not a page: only text you can edit or copy from is selectable. */
 body { -webkit-user-select: none; user-select: none; }
+
+/* No elastic "pull" bounce from a touchpad or touchscreen: the page and its lists stay put at their ends. */
+html, body, .list, .editor, .settings, .popup-list, .textarea { overscroll-behavior: none; }
 input, textarea, .preview-box { -webkit-user-select: text; user-select: text; }
 
 ::selection { background: var(--accent); color: var(--accent-ink); }
