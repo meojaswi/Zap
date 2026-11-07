@@ -58,3 +58,16 @@ jobs:
           releaseName: Zap __VERSION__
           generateReleaseNotes: true
           releaseDraft: false
+      # latest.json links the installer through api.github.com, which allows only 60 unauthenticated
+      # requests an hour per network, so updates on a busy college or office Wi-Fi would fail.
+      # Point it at the release's plain download link instead.
+      - name: Use plain download links in latest.json
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="v$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          gh release download "$tag" --pattern latest.json --dir "$RUNNER_TEMP" --clobber
+          gh api "repos/${{ github.repository }}/releases/tags/$tag" > "$RUNNER_TEMP/release.json"
+          node .github/scripts/direct-download-links.mjs "$RUNNER_TEMP/latest.json" "$RUNNER_TEMP/release.json"
+          gh release upload "$tag" "$RUNNER_TEMP/latest.json" --clobber
