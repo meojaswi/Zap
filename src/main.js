@@ -240,6 +240,7 @@ function renderSettings() {
   $("inline").checked = state.settings.inlineEnabled;
   $("autostart").checked = state.autostart;
   $("check-updates").checked = state.settings.checkUpdates;
+  $("usage-ping").checked = state.settings.usagePing;
   $("app-version").textContent = state.appVersion;
   if (document.activeElement !== $("excluded")) $("excluded").value = state.settings.excludedApps.join("\n");
 }
@@ -385,6 +386,10 @@ $("secondary-save").addEventListener("click", () => {
   const prefix = $("secondary-prefix").value.trim();
   updateSettings({ secondaryPrefix: prefix }, prefix ? `Secondary prefix set to ${prefix}` : "Secondary prefix turned off");
 });
+
+$("usage-ping").addEventListener("change", (e) =>
+  updateSettings({ usagePing: e.target.checked }, e.target.checked ? "Anonymous user count on" : "Anonymous user count off. The ID is deleted.")
+);
 
 $("keep-stats").addEventListener("change", (e) =>
   updateSettings({ keepStats: e.target.checked }, e.target.checked ? "Usage stats on" : "Usage stats off. Nothing will be counted.")

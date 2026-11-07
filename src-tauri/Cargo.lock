@@ -5449,6 +5449,8 @@ name = "zap"
 version = "0.1.13"
 dependencies = [
  "chrono",
+ "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "tauri",

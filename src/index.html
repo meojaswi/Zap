@@ -145,7 +145,7 @@
             <div class="card-row">
               <div style="flex:1">
                 <h3>Updates</h3>
-                <p style="margin:0">You're on Zap <span id="app-version"></span>. Zap checks GitHub about once an hour and notifies you when a new version is ready. No snippets or usage data are sent.</p>
+                <p style="margin:0">You're on Zap <span id="app-version"></span>. Zap checks GitHub about once an hour and notifies you when a new version is ready. Nothing about you or your snippets is sent.</p>
               </div>
               <label class="switch"><input type="checkbox" id="check-updates"><span class="slider"></span></label>
             </div>
@@ -170,6 +170,16 @@
           </div>
 
           <div class="card">
+            <div class="card-row">
+              <div style="flex:1">
+                <h3>Anonymous user count</h3>
+                <p style="margin:0">Once a day, Zap sends a random ID and its version number so we can count how many people use it. The ID is made on this PC and isn't linked to you, your PC or your snippets, and the server keeps only a count, not the ID. Turning this off deletes the ID.</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="usage-ping"><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <div class="card">
             <h3>Backup</h3>
             <p>Export saves your snippets as a <strong>plain, unencrypted</strong> JSON file, so keep it somewhere safe. Importing updates snippets with the same trigger.</p>
             <div class="actions">
@@ -186,7 +196,7 @@
               <li>Sensitive snippets are typed key by key and never go through the clipboard.</li>
               <li>Keystrokes are never written to disk or logged.</li>
               <li>Usage stats (how often each snippet is used, and the last date) stay on this PC, encrypted. You can turn them off or reset them above.</li>
-              <li>The only thing Zap connects to is GitHub, to check for updates. You can turn that off above.</li>
+              <li>Zap connects to GitHub to check for updates, and once a day to our server for the anonymous user count: a random ID and the version, nothing else. You can turn both off above.</li>
               <li>Updates are signed, and Zap refuses any download that isn't.</li>
               <li>Don't store passwords here. A password manager is the right place for those.</li>
             </ul>

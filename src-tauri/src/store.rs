@@ -49,11 +49,13 @@ pub struct Settings {
     /// Letters that stand in for a trigger's leading symbol, so `email also works as zzemail on
     /// sites that block `. Empty means off.
     pub secondary_prefix: String,
+    /// Send an anonymous daily check-in (random ID + version) so the makers can count active users.
+    pub usage_ping: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new() }
+        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new(), usage_ping: true }
     }
 }
 
@@ -62,6 +64,10 @@ impl Default for Settings {
 pub struct Data {
     pub snippets: Vec<Snippet>,
     pub settings: Settings,
+    /// Random ID for the anonymous daily check-in; empty until the first one, cleared when it's turned off.
+    pub install_id: String,
+    /// Local date of the last successful check-in, as YYYY-MM-DD.
+    pub last_ping: Option<String>,
 }
 
 pub struct Shared {
@@ -128,6 +134,8 @@ fn seed() -> Data {
             snippet("Random ID", "`uuid", "{uuid}"),
         ],
         settings: Settings::default(),
+        install_id: String::new(),
+        last_ping: None,
     }
 }
 

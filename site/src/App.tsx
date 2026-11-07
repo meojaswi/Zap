@@ -10,7 +10,7 @@ import { CONTACT, REPO_URL } from "./config";
 import { useLatestRelease } from "./useLatestRelease";
 
 const METRICS = [
-  ["0", "accounts or telemetry"],
+  ["0", "accounts or ads"],
   ["DPAPI", "encrypted at rest"],
   ["4.5 MB", "installer size"],
   ["6", "live placeholders"],
@@ -46,7 +46,7 @@ const SECURITY = [
   ["sensitive", "Sensitive snippets are typed key by key, never via clipboard"],
   ["keystrokes", "Never logged or saved; only the last few chars live in memory"],
   ["stats", "Snippet use counts stay on this PC, encrypted; turn them off anytime"],
-  ["network", "No account or telemetry; only connects to GitHub for signed updates, and you can turn that off"],
+  ["network", "No account; connects only for signed updates and an anonymous daily user count, both can be turned off"],
 ];
 
 const STEPS = [

@@ -143,7 +143,7 @@ Inline expansion needs a keyboard hook, so Zap is built to keep as little as pos
 - Snippets marked **Sensitive** are typed key by key and never touch the clipboard.
 - Keystrokes are **never logged or saved**. Only the last few characters are held in memory to spot triggers.
 - **Usage stats stay on your PC.** Zap counts how often each snippet is used and the last date, to show the time it saves you. Nothing you type is recorded, stats are encrypted with your snippets and left out of exports, and you can turn them off or reset them in Settings.
-- **No account, no telemetry.** Zap only connects to GitHub to check for updates, and you can turn that off in Settings. No snippets or usage data are sent.
+- **No account. Only an anonymous user count.** Zap connects to GitHub to check for updates, and once a day to our server so we can count active users. That check-in sends only a random ID made on your PC and the version number: nothing about you, your PC or your snippets, and the server keeps a count, not the ID. You can turn either off in **Settings**; turning off the user count deletes the ID.
 - **Signed updates.** Zap notifies you when a new version is out and refuses any update that isn't signed.
 
 Don't store passwords in Zap. A password manager is the right place for those.

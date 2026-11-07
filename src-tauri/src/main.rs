@@ -8,6 +8,7 @@ mod hook;
 mod input;
 mod store;
 mod updater;
+mod usage;
 mod winutil;
 
 use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU64, Ordering};
@@ -245,7 +246,15 @@ fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String>
         *HOTKEY_ERROR.lock().unwrap() = None;
     }
     hook::set_enabled(settings.inline_enabled);
-    shared().data.write().unwrap().settings = settings;
+    {
+        let mut data = shared().data.write().unwrap();
+        // Turning the check-in off forgets the ID, so turning it back on starts as a new install.
+        if !settings.usage_ping {
+            data.install_id.clear();
+            data.last_ping = None;
+        }
+        data.settings = settings;
+    }
     save_and_notify(&app)
 }
 
@@ -491,6 +500,7 @@ fn main() {
             hook::set_enabled(settings.inline_enabled);
             build_tray(app)?;
             updater::start(handle.clone());
+            usage::start(handle.clone());
             let _ = APP.set(handle.clone());
             if !std::env::args().any(|a| a == "--minimized") {
                 show_main(&handle);
