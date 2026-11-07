@@ -134,6 +134,17 @@ In the Zap window:
 
 Zap checks GitHub for a new version when it starts and about once an hour. When one is out, you get a Windows notification and an **Install and restart** banner. You can also use **Check for updates** in the tray menu or **Settings → Updates → Check now**, and turn automatic checks off in Settings.
 
+### Anonymous user count
+
+So we can see how many people use Zap, it checks in once a day, at most, with two things:
+
+- a **random ID**, made on your PC the first time. It isn't based on your hardware, name, email or snippets.
+- the **version number**, like `0.1.14`.
+
+Nothing else is sent: not your snippets, not what you type, not your stats. Our server doesn't even keep the ID; it adds it to approximate counters (about 1% error) and discards it.
+
+It's on by default. Turn it off under **Settings → Anonymous user count**, and Zap deletes the ID straight away. Development builds never check in.
+
 ## Privacy
 
 Inline expansion needs a keyboard hook, so Zap is built to keep as little as possible:
@@ -187,6 +198,25 @@ npm run build   # build the installer → src-tauri/target/release/bundle/nsis/
 
 Change the version in `src-tauri/tauri.conf.json` and push to `main`. GitHub Actions builds, signs and publishes the release, and installed copies notify their users within about an hour.
 
+### Counting users
+
+The site's `/api/ping` endpoint receives the daily check-ins and stores only HyperLogLog counts in Neon Postgres. To see them, open:
+
+```
+https://zap-rho-five.vercel.app/api/stats?token=<STATS_TOKEN>
+```
+
+| Field                | Means                                                    |
+| -------------------- | -------------------------------------------------------- |
+| `activeToday`        | Installs that checked in today (UTC)                     |
+| `activeLast7Days`    | Different installs seen in the last 7 days               |
+| `activeLast30Days`   | Different installs seen in the last 30 days              |
+| `installsEver`       | Every install that has ever checked in: the all-time total |
+| `versionsLast7Days`  | Active installs per app version over the last 7 days     |
+| `daily`              | Active installs for each of the last 30 days             |
+
+Each install counts once, however often it checks in. A person on two PCs counts as two, people who turn the check-in off aren't counted, and counting started with 0.1.14, so earlier users only appear once they update. `STATS_TOKEN` is a secret environment variable on the Vercel project; without it the page returns 404.
+
 ## Project structure
 
 ```
@@ -199,8 +229,10 @@ Change the version in `src-tauri/tauri.conf.json` and push to `main`. GitHub Act
 │       ├── clipboard.rs   clipboard access, kept out of Win+V history
 │       ├── store.rs       snippets and settings
 │       ├── crypto.rs      DPAPI encryption
-│       └── updater.rs     signed update checks and installs
+│       ├── updater.rs     signed update checks and installs
+│       └── usage.rs       anonymous daily check-in
 ├── site/           Landing page (React + TypeScript + Tailwind), deployed to Vercel
+│   └── api/        Vercel functions: /api/ping and /api/stats for the user count
 └── docs/           README assets
 ```
 
