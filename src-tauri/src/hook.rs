@@ -135,13 +135,23 @@ fn handle_key(vk: u32, scan: u32) -> bool {
     buffer.push(ch);
 
     let data = shared.data.read().unwrap();
-    let longest = data.snippets.iter().map(|s| s.trigger.chars().count()).max().unwrap_or(0);
+    let prefix = data.settings.secondary_prefix.as_str();
+    let forms: Vec<(usize, String)> = data
+        .snippets
+        .iter()
+        .enumerate()
+        .flat_map(|(i, s)| store::trigger_forms(&s.trigger, prefix).into_iter().map(move |f| (i, f)))
+        .collect();
+    let longest = forms.iter().map(|(_, f)| f.chars().count()).max().unwrap_or(0);
     let len = buffer.chars().count();
     if len > longest {
         *buffer = buffer.chars().skip(len - longest).collect();
     }
 
-    let Some(snippet) = data.snippets.iter().find(|s| buffer.ends_with(&s.trigger)) else { return false };
+    let Some((index, typed_trigger)) = forms.into_iter().find(|(_, f)| buffer.ends_with(f.as_str())) else {
+        return false;
+    };
+    let snippet = &data.snippets[index];
     buffer.clear();
     if let Some(exe) = winutil::foreground_exe() {
         if data.settings.excluded_apps.iter().any(|app| normalize_app(app) == exe) {
@@ -150,7 +160,7 @@ fn handle_key(vk: u32, scan: u32) -> bool {
     }
     let snippet = snippet.clone();
     // The final key is swallowed, so only the characters already typed need deleting.
-    let typed = snippet.trigger.chars().count() - 1;
+    let typed = typed_trigger.chars().count() - 1;
     thread::spawn(move || expand::deliver(&snippet, typed));
     true
 }

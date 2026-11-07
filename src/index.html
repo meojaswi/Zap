@@ -38,7 +38,7 @@
         <div class="welcome" id="welcome">
           <div class="bolt">⚡</div>
           <h2>pick a snippet, or create one</h2>
-          <p>Type a trigger like <code>`pemail</code> in any app and it expands instantly. Or press <kbd id="welcome-hotkey">Ctrl+Shift+Space</kbd> to search and paste.</p>
+          <p>Type a trigger like <code>`email</code> in any app and it expands instantly. Or press <kbd id="welcome-hotkey">Ctrl+Shift+Space</kbd> to search and paste.</p>
         </div>
 
         <form class="editor-inner" id="form" hidden>
@@ -49,8 +49,9 @@
             </div>
             <div class="field">
               <label for="f-trigger">Trigger</label>
-              <input class="input" id="f-trigger" placeholder="`pemail" autocomplete="off" spellcheck="false">
+              <input class="input" id="f-trigger" placeholder="`email" autocomplete="off" spellcheck="false">
               <div class="hint">Start with <code>`</code> so it never fires by accident.</div>
+              <div class="hint" id="f-secondary" hidden></div>
             </div>
           </div>
 
@@ -107,10 +108,20 @@
             <div class="card-row">
               <div style="flex:1">
                 <h3>Expand triggers as I type</h3>
-                <p style="margin:0">Type <code>`pemail</code> in any app and it becomes your email, without opening the search box. This needs a keyboard hook that sees your keystrokes. Zap only keeps the last few characters in memory and never saves or logs them.</p>
+                <p style="margin:0">Type <code>`email</code> in any app and it becomes your email, without opening the search box. This needs a keyboard hook that sees your keystrokes. Zap only keeps the last few characters in memory and never saves or logs them.</p>
               </div>
               <label class="switch"><input type="checkbox" id="inline"><span class="slider"></span></label>
             </div>
+          </div>
+
+          <div class="card">
+            <h3>Secondary trigger prefix</h3>
+            <p>Some websites block characters like <code>`</code> in their fields. Set a prefix of letters, like <code>zz</code>, and every trigger that starts with a symbol also works with it. Leave it empty to turn this off.</p>
+            <div class="card-row">
+              <input class="input" id="secondary-prefix" placeholder="zz" autocomplete="off" spellcheck="false" style="max-width:160px">
+              <button class="btn" id="secondary-save">Save</button>
+            </div>
+            <div class="hint" id="secondary-example"></div>
           </div>
 
           <div class="card">

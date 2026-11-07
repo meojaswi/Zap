@@ -32,7 +32,9 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 
 A trigger is the short text you type to insert a snippet. It needs at least 2 characters and no spaces, and one trigger can't contain another (otherwise the shorter one would always fire first).
 
-Starting triggers with `` ` `` keeps them from firing by accident, but some websites block special characters like `` ` `` or `$` in their fields. For those, use a letter-only trigger such as `zzemail`, or insert the snippet from the search popup instead.
+Starting triggers with `` ` `` keeps them from firing by accident, but some websites block special characters like `` ` `` or `$` in their fields.
+
+For those, set a **secondary trigger prefix** once in **Settings**, made of letters like `zz`. Every trigger that starts with a symbol then also works with the prefix in its place, so `` `email `` also works as `zzemail` and `` `today `` as `zztoday`. Triggers that already start with a letter work everywhere, so they stay as they are. You can change the prefix any time, or clear it to turn this off. You can also insert any snippet from the search popup.
 
 ### Starter snippets
 

@@ -102,13 +102,15 @@ fn render_at(content: &str, now: chrono::DateTime<chrono::Local>) -> String {
 pub fn deliver(snippet: &Snippet, backspaces: usize) {
     let text = render(&snippet.content);
     insert(&text, snippet.sensitive, backspaces);
-    crate::record_use(&snippet.id, chars_saved(&snippet.content, &snippet.trigger));
+    // Inline, the trigger typed was `backspaces` + 1 characters (it may be the secondary one).
+    let typed = if backspaces > 0 { backspaces + 1 } else { snippet.trigger.chars().count() };
+    crate::record_use(&snippet.id, chars_saved(&snippet.content, typed));
 }
 
 /// Characters the user didn't type. Text from {clipboard} doesn't count: they'd have pasted it anyway.
-fn chars_saved(content: &str, trigger: &str) -> usize {
+fn chars_saved(content: &str, trigger_len: usize) -> usize {
     let typed_for_you = render(&content.replace("{clipboard}", "")).chars().count();
-    typed_for_you.saturating_sub(trigger.chars().count())
+    typed_for_you.saturating_sub(trigger_len)
 }
 
 fn insert(text: &str, sensitive: bool, backspaces: usize) {
@@ -192,10 +194,10 @@ mod tests {
 
     #[test]
     fn clipboard_text_is_not_counted_as_saved() {
-        assert_eq!(super::chars_saved("someone@example.com", "`email"), 13);
-        assert_eq!(super::chars_saved("{clipboard}", "`clipboard"), 0);
-        assert_eq!(super::chars_saved("Quote: {clipboard}", "`q"), 5);
-        assert_eq!(super::chars_saved("hi", "`longtrigger"), 0);
+        assert_eq!(super::chars_saved("someone@example.com", 6), 13);
+        assert_eq!(super::chars_saved("{clipboard}", 10), 0);
+        assert_eq!(super::chars_saved("Quote: {clipboard}", 2), 5);
+        assert_eq!(super::chars_saved("hi", 12), 0);
     }
 
     #[test]

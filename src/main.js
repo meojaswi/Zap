@@ -34,6 +34,7 @@ function render() {
   renderSettings();
   renderStats();
   renderUsage();
+  renderSecondary();
 }
 
 // ---------- Stats ----------
@@ -149,6 +150,7 @@ function select(id) {
   $("f-sensitive").checked = snippet?.sensitive ?? false;
   $("delete-btn").hidden = creating;
   renderUsage();
+  renderSecondary();
   updatePreview();
   renderList();
   (creating ? $("f-name") : $("f-content")).focus();
@@ -207,6 +209,28 @@ async function remove() {
   closeEditor();
   await load();
   toast("Deleted");
+}
+
+// ---------- Secondary trigger ----------
+
+/** Mirrors store::secondary_trigger: the prefix replaces a leading symbol; letter-led triggers keep theirs. */
+function secondaryTrigger(trigger, prefix = state.settings.secondaryPrefix) {
+  if (!prefix || !trigger || /^[\p{L}\p{N}]/u.test(trigger)) return null;
+  return prefix + [...trigger].slice(1).join("");
+}
+
+function renderSecondary() {
+  const hint = $("f-secondary");
+  const alt = secondaryTrigger($("f-trigger").value.trim());
+  hint.hidden = !alt;
+  if (alt) hint.innerHTML = `Also works as <code>${escapeHtml(alt)}</code>`;
+
+  if (document.activeElement !== $("secondary-prefix")) $("secondary-prefix").value = state.settings.secondaryPrefix || "";
+  const example = state.snippets.map((s) => s.trigger).find((t) => secondaryTrigger(t)) || "`email";
+  const preview = secondaryTrigger(example, $("secondary-prefix").value.trim());
+  $("secondary-example").innerHTML = preview
+    ? `<code>${escapeHtml(example)}</code> also works as <code>${escapeHtml(preview)}</code>`
+    : "Off. Triggers only work as you wrote them.";
 }
 
 // ---------- Settings ----------
@@ -353,6 +377,13 @@ $("update-install").addEventListener("click", async () => {
     button.disabled = false;
     button.textContent = "Install and restart";
   }
+});
+
+$("f-trigger").addEventListener("input", renderSecondary);
+$("secondary-prefix").addEventListener("input", renderSecondary);
+$("secondary-save").addEventListener("click", () => {
+  const prefix = $("secondary-prefix").value.trim();
+  updateSettings({ secondaryPrefix: prefix }, prefix ? `Secondary prefix set to ${prefix}` : "Secondary prefix turned off");
 });
 
 $("keep-stats").addEventListener("change", (e) =>

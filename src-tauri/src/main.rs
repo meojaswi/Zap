@@ -164,7 +164,7 @@ fn save_snippet(app: AppHandle, mut snippet: Snippet) -> Result<Snippet, String>
     }
     {
         let mut data = shared().data.write().unwrap();
-        store::validate(&data.snippets, &snippet)?;
+        store::validate(&data.snippets, &snippet, &data.settings.secondary_prefix)?;
         if snippet.id.is_empty() {
             snippet.id = store::new_id();
         }
@@ -227,6 +227,8 @@ fn delete_snippet(app: AppHandle, id: String) -> Result<(), String> {
 fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String> {
     settings.hotkey = settings.hotkey.trim().to_string();
     settings.typing_wpm = settings.typing_wpm.clamp(5, 300);
+    settings.secondary_prefix = settings.secondary_prefix.trim().to_string();
+    store::validate_prefix(&shared().data.read().unwrap().snippets, &settings.secondary_prefix)?;
     settings.excluded_apps = settings
         .excluded_apps
         .iter()
@@ -380,7 +382,7 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
             if snippet.name.trim().is_empty() {
                 snippet.name = snippet.trigger.clone();
             }
-            if let Err(e) = store::validate(&data.snippets, &snippet) {
+            if let Err(e) = store::validate(&data.snippets, &snippet, &data.settings.secondary_prefix) {
                 result.skipped.push(format!("{}: {e}", snippet.trigger));
                 continue;
             }
