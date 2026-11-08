@@ -109,7 +109,6 @@ function renderStatus() {
   banner.textContent = state.hotkeyError
     ? `${state.hotkeyError}. Another app may be using it, so pick a different one in Settings.`
     : "";
-  $("brand-version").textContent = state.appVersion;
   // Once it's downloaded, the header button replaces the "available" banner.
   $("restart-update").hidden = !state.updateReady;
   if (state.updateReady && !restarting) $("restart-update").title = `Zap ${state.updateReady} is downloaded. Click to restart with it.`;

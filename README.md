@@ -42,6 +42,10 @@ For those, set a **secondary trigger prefix** once in **Settings**, made of lett
 
 Give a snippet a **Group** in the editor, like `Work`, `College` or `Email`. The field suggests the groups you already have. In the list, snippets appear under their group's heading; click a heading to collapse or expand it, and Zap remembers which ones are collapsed. Snippets without a group appear under **Ungrouped**, and if none have a group, the list looks the same as before. Searching matches group names too and shows matches even in collapsed groups, and the search popup shows each snippet's group. Exports keep groups.
 
+### Adding snippets from the search box
+
+You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
+
 ### Starter snippets
 
 New installs come with these, so you can try Zap straight away. Edit or delete them as you like.

@@ -601,6 +601,9 @@ fn main() {
             updater::start(handle.clone());
             usage::start(handle.clone());
             let _ = APP.set(handle.clone());
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_title(&format!("Zap {}", app.package_info().version));
+            }
             let updated_quietly = updater::finish_quiet_restart(&handle);
             if !updated_quietly && !std::env::args().any(|a| a == "--minimized") {
                 show_main(&handle);

@@ -8,15 +8,42 @@
 </head>
 <body class="popup">
   <div class="popup-wrap">
-    <div class="popup-search">
+    <div class="popup-search" id="search-bar">
       <span class="bolt">⚡</span>
       <input id="q" placeholder="search_" autocomplete="off" spellcheck="false">
+      <button class="btn popup-new" id="new-btn" title="New snippet (Ctrl+N)">+ new</button>
     </div>
     <div class="popup-list" id="results"></div>
-    <div class="popup-foot">
+    <div class="add-form" id="add-form" hidden>
+      <div class="row">
+        <div class="field">
+          <label for="add-name">Name</label>
+          <input class="input" id="add-name" placeholder="Work email" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="add-trigger">Trigger</label>
+          <input class="input" id="add-trigger" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="field add-text">
+        <label for="add-content">Text</label>
+        <textarea class="textarea" id="add-content" placeholder="The text this trigger becomes" spellcheck="false"></textarea>
+      </div>
+      <div class="form-error" id="add-error" hidden></div>
+      <div class="actions">
+        <button class="btn primary" id="add-save">Save</button>
+        <button class="btn" id="add-cancel">Cancel</button>
+      </div>
+    </div>
+    <div class="popup-foot" id="search-foot">
       <span><kbd>↑</kbd> <kbd>↓</kbd> move</span>
       <span><kbd>Enter</kbd> paste</span>
+      <span><kbd>Ctrl</kbd> <kbd>N</kbd> new</span>
       <span><kbd>Esc</kbd> close</span>
+    </div>
+    <div class="popup-foot" id="add-foot" hidden>
+      <span><kbd>Ctrl</kbd> <kbd>Enter</kbd> save</span>
+      <span><kbd>Esc</kbd> back to search</span>
     </div>
   </div>
   <script src="popup.js"></script>

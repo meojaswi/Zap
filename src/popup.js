@@ -43,7 +43,10 @@ function search() {
 
 function render() {
   if (!results.length) {
-    resultsEl.innerHTML = `<div class="empty">${snippets.length ? "No matching snippets" : "No snippets yet. Add some in the Zap window."}</div>`;
+    const query = input.value.trim();
+    resultsEl.innerHTML = query
+      ? `<div class="empty">No matching snippets</div><button class="add-row" id="add-row">+ Add "${escapeHtml(query)}" as a new snippet</button>`
+      : `<div class="empty">No snippets yet. Press + new to add one.</div>`;
     return;
   }
   resultsEl.innerHTML = results
@@ -79,7 +82,8 @@ input.addEventListener("keydown", (e) => {
     render();
   } else if (e.key === "Enter") {
     e.preventDefault();
-    choose(active);
+    if (results.length) choose(active);
+    else if (input.value.trim()) openForm(input.value);
   } else if (e.key === "Escape") {
     e.preventDefault();
     invoke("hide_popup");
@@ -94,11 +98,85 @@ resultsEl.addEventListener("mousemove", (e) => {
   }
 });
 resultsEl.addEventListener("click", (e) => {
+  if (e.target.closest("#add-row")) {
+    openForm(input.value);
+    return;
+  }
   const row = e.target.closest(".result");
   if (row) choose(Number(row.dataset.index));
 });
 
+// ---------- New snippet ----------
+
+const $ = (id) => document.getElementById(id);
+
+function showForm(open) {
+  $("add-form").hidden = !open;
+  $("add-foot").hidden = !open;
+  $("search-bar").hidden = open;
+  $("search-foot").hidden = open;
+  resultsEl.hidden = open;
+}
+
+/** Opens the form, using what was searched for as the name and trigger. */
+function openForm(query = "") {
+  const words = query.trim();
+  $("add-name").value = words;
+  $("add-trigger").value = "`" + words.toLowerCase().replace(/\s+/g, "");
+  $("add-content").value = "";
+  $("add-error").hidden = true;
+  showForm(true);
+  (words ? $("add-content") : $("add-name")).focus();
+}
+
+function closeForm() {
+  showForm(false);
+  input.focus();
+}
+
+async function saveNew() {
+  try {
+    const saved = await invoke("save_snippet", {
+      snippet: { id: "", name: $("add-name").value, trigger: $("add-trigger").value, content: $("add-content").value, sensitive: false, group: "", html: null },
+    });
+    snippets = (await invoke("get_data")).snippets;
+    closeForm();
+    // Show the new snippet selected, so Enter inserts it straight away.
+    input.value = saved.trigger;
+    search();
+  } catch (e) {
+    $("add-error").textContent = e;
+    $("add-error").hidden = false;
+  }
+}
+
+$("new-btn").addEventListener("click", () => openForm());
+$("add-save").addEventListener("click", saveNew);
+$("add-cancel").addEventListener("click", closeForm);
+
+$("add-form").addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    closeForm();
+  } else if (e.key === "Enter" && e.ctrlKey) {
+    e.preventDefault();
+    saveNew();
+  } else if (e.key === "Enter" && e.target.tagName === "INPUT") {
+    // Enter moves on from Name and Trigger; in Text it's a new line.
+    e.preventDefault();
+    (e.target.id === "add-name" ? $("add-trigger") : $("add-content")).focus();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key.toLowerCase() === "n" && $("add-form").hidden) {
+    e.preventDefault();
+    openForm(results.length ? "" : input.value);
+  }
+});
+
 async function refresh() {
+  showForm(false);
   snippets = (await invoke("get_data")).snippets;
   input.value = "";
   search();
