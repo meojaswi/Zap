@@ -24,12 +24,17 @@
         <div class="field">
           <label for="add-trigger">Trigger</label>
           <input class="input" id="add-trigger" autocomplete="off" spellcheck="false">
+          <div class="hint" id="add-trigger-hint" hidden></div>
         </div>
       </div>
       <div class="field add-text">
         <div class="field-head">
           <label for="add-content">Text</label>
-          <label class="inline-check" title="Bold, italic, links and lists for apps like Gmail, Outlook and Word"><input type="checkbox" id="add-rich"> Formatting</label>
+          <div class="field-tools">
+            <button type="button" class="chip" id="add-generate" title="Write what you want in the box, then click to replace it with AI-written text">Generate</button>
+            <button type="button" class="chip" id="add-generate-undo" title="Put your directions back" hidden>Undo</button>
+            <label class="inline-check" title="Bold, italic, links and lists for apps like Gmail, Outlook and Word"><input type="checkbox" id="add-rich"> Formatting</label>
+          </div>
         </div>
         <div class="rich-toolbar" id="add-rich-toolbar" hidden>
           <button type="button" class="chip" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>

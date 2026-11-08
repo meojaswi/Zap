@@ -68,7 +68,11 @@
           <div class="field">
             <div class="field-head">
               <label for="f-content">Text</label>
+              <div class="field-tools">
+              <button type="button" class="chip" id="f-generate" title="Write what you want in the box, then click to replace it with AI-written text">Generate</button>
+              <button type="button" class="chip" id="f-generate-undo" title="Put your directions back" hidden>Undo</button>
               <label class="inline-check" title="Bold, italic, links and lists for apps like Gmail, Outlook and Word"><input type="checkbox" id="f-rich"> Formatting</label>
+            </div>
             </div>
             <div class="rich-toolbar" id="f-rich-toolbar" hidden>
               <button type="button" class="chip" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
@@ -92,7 +96,7 @@
               <button type="button" class="chip" data-ph="{input:Name}">{input:…}</button>
               <button type="button" class="chip" data-ph="{snippet:Name}" title="Include another snippet by its name or trigger">{snippet:…}</button>
             </div>
-            <div class="hint" style="margin-top:8px">Other formats: add codes after a colon, like <code>{date:DD/MM/YYYY}</code> or <code>{time:hh:mm A}</code>. Codes: <code>YYYY</code> <code>YY</code> <code>MMMM</code> <code>MMM</code> <code>MM</code> <code>DD</code> <code>D</code> <code>dddd</code> <code>ddd</code> for dates; <code>HH</code> (24-hour) <code>hh</code> (12-hour) <code>mm</code> <code>ss</code> <code>A</code> (AM/PM) for times. Put other words in [brackets].</div>
+            <div class="hint" style="margin-top:8px">Other formats: add codes after a colon, like <code>{date:DD/MM/YYYY}</code> or <code>{time:hh:mm A}</code>. Codes: <code>YYYY</code> <code>YY</code> <code>MMMM</code> <code>MMM</code> <code>MM</code> <code>DD</code> <code>D</code> <code>dddd</code> <code>ddd</code> for dates; <code>HH</code> (24-hour) <code>hh</code> (12-hour) <code>mm</code> <code>ss</code> <code>A</code> (AM/PM) for times. Put other words in [brackets]. Dates from today: <code>{date+7}</code>, <code>{date-1:DD/MM/YYYY}</code>, with <code>w</code>, <code>m</code> or <code>y</code> for weeks, months or years, like <code>{date+2w}</code>.</div>
           </div>
 
           <div class="field" id="preview-field">
@@ -109,6 +113,7 @@
             <button type="submit" class="btn primary" id="save-btn">Save</button>
             <button type="button" class="btn" id="cancel-btn">Cancel</button>
             <div class="spacer"></div>
+            <button type="button" class="btn" id="duplicate-btn">Duplicate</button>
             <button type="button" class="btn danger" id="delete-btn">Delete</button>
           </div>
         </form>
@@ -182,6 +187,33 @@
                 <p style="margin:0">Launch Zap quietly in the system tray when you sign in.</p>
               </div>
               <label class="switch"><input type="checkbox" id="autostart"><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>AI generation</h3>
+            <p>Write directions in a snippet's Text box, like "polite email asking for leave on Friday", and click Generate. Only those directions are sent, from your PC straight to the provider you choose, and only when you click. Sensitive snippets are never sent. You pay your provider for what you use.</p>
+            <div class="card-row">
+              <select class="input ai-select" id="ai-provider" aria-label="AI provider">
+                <option value="">Off</option>
+                <option value="claude">Claude</option>
+                <option value="chatgpt">ChatGPT</option>
+                <option value="grok">Grok</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </div>
+            <div id="ai-details" hidden>
+              <div class="card-row ai-row">
+                <input class="input" id="ai-key" type="password" placeholder="Paste your API key" autocomplete="off" spellcheck="false">
+                <button class="btn" id="ai-key-save">Save key</button>
+                <button class="btn danger" id="ai-key-remove" hidden>Remove key</button>
+              </div>
+              <div class="hint" id="ai-key-status"></div>
+              <div class="field ai-model">
+                <label for="ai-model">Model</label>
+                <input class="input" id="ai-model" autocomplete="off" spellcheck="false">
+                <div class="hint">Leave empty for the default shown. Providers rename models over time, so change this if one stops working.</div>
+              </div>
             </div>
           </div>
 

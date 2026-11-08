@@ -79,6 +79,12 @@ html, body, .list, .editor, .settings, .popup-list, .textarea { overscroll-behav
   letter-spacing: 0.12em;
   color: var(--muted);
 }
+.field-tools { display: flex; align-items: center; gap: var(--space-2); }
+.field-tools .inline-check { margin-left: var(--space-2); }
+.ai-select { width: 180px; }
+.ai-row { margin-top: var(--space-3); }
+.ai-row .input { flex: 1; min-width: 0; }
+.ai-model { margin-top: var(--space-3); }
 .inline-check { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--muted); cursor: pointer; }
 .rich-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
 .rich-editor { min-height: 160px; overflow-y: auto; white-space: normal; cursor: text; }

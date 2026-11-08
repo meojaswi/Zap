@@ -75,6 +75,60 @@ fn fill_custom_formats(text: &str, name: &str, now: &chrono::DateTime<chrono::Lo
     out
 }
 
+/// Works out a date relative to now from what follows the name, like "+7", "-2w:DD/MM" or "+1m".
+/// A plain number is days; w, m and y are weeks, months and years. Anything else returns None.
+fn date_maths(spec: &str, name: &str, now: &chrono::DateTime<chrono::Local>) -> Option<String> {
+    use chrono::{Days, Months};
+    let (offset, format) = spec.split_once(':').map_or((spec, None), |(o, f)| (o, Some(f)));
+    let forward = offset.starts_with('+');
+    let rest = offset.get(1..)?;
+    let digits = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
+    let amount: u32 = rest[..digits].parse().ok()?;
+    let by_days = |days: u64| if forward { now.checked_add_days(Days::new(days)) } else { now.checked_sub_days(Days::new(days)) };
+    let by_months = |months: u32| if forward { now.checked_add_months(Months::new(months)) } else { now.checked_sub_months(Months::new(months)) };
+    let shifted = match &rest[digits..] {
+        "" | "d" => by_days(u64::from(amount)),
+        "w" => by_days(u64::from(amount) * 7),
+        "m" => by_months(amount),
+        "y" => by_months(amount.checked_mul(12)?),
+        _ => None,
+    }?;
+    let strftime = match (format, name) {
+        (Some(format), _) => to_strftime(format),
+        (None, "datetime") => "%Y-%m-%d %H:%M".to_string(),
+        (None, "day") => "%A".to_string(),
+        (None, _) => "%Y-%m-%d".to_string(),
+    };
+    Some(shifted.format(&strftime).to_string())
+}
+
+/// Replaces {name+N} and {name-N} placeholders. Ones that can't be read are left as written.
+fn fill_date_maths(text: &str, name: &str, now: &chrono::DateTime<chrono::Local>) -> String {
+    let opening = format!("{{{name}");
+    let mut out = String::new();
+    let mut rest = text;
+    while let Some(start) = rest.find(&opening) {
+        let name_end = start + opening.len();
+        let after = &rest[name_end..];
+        if !after.starts_with(['+', '-']) {
+            out.push_str(&rest[..name_end]);
+            rest = after;
+            continue;
+        }
+        let Some(end) = after.find('}') else { break };
+        match date_maths(&after[..end], name, now) {
+            Some(value) => {
+                out.push_str(&rest[..start]);
+                out.push_str(&value);
+            }
+            None => out.push_str(&rest[..name_end + end + 1]),
+        }
+        rest = &after[end + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
 const MAX_FILL_INS: usize = 10;
 
 /// The labels of the snippet's {input:Label} fill-ins, in order, each once.
@@ -228,6 +282,9 @@ pub fn render_html(html: &str) -> String {
 
 fn render_at(content: &str, now: chrono::DateTime<chrono::Local>, html: bool) -> String {
     let mut text = content.to_string();
+    for name in ["date", "datetime", "day"] {
+        text = fill_date_maths(&text, name, &now);
+    }
     for name in ["date", "time", "datetime"] {
         text = fill_custom_formats(&text, name, &now);
     }
@@ -567,6 +624,32 @@ mod tests {
         assert_eq!(undo_length("ok 😀", None), None);
         assert_eq!(undo_length("", None), None);
         assert_eq!(undo_length(&"x".repeat(501), None), None);
+    }
+
+    #[test]
+    fn date_maths_adds_and_subtracts() {
+        assert_eq!(at("{date+7}"), "2026-11-13");
+        assert_eq!(at("{date-6:DD/MM/YYYY}"), "31/10/2026");
+        assert_eq!(at("{date+2w}"), "2026-11-20");
+        assert_eq!(at("{date+1m:D MMM}"), "6 Dec");
+        assert_eq!(at("{date-1y:YYYY}"), "2025");
+        assert_eq!(at("{day+1}"), "Saturday");
+        assert_eq!(at("{datetime+1:DD/MM hh:mm A}"), "07/11 05:05 PM");
+        assert_eq!(at("{datetime-1}"), "2026-11-05 17:05");
+        assert_eq!(at("Due {date+1} after {date}"), "Due 2026-11-07 after 2026-11-06");
+    }
+
+    #[test]
+    fn date_maths_uses_the_last_day_of_a_shorter_month() {
+        let jan_31 = chrono::Local.with_ymd_and_hms(2026, 1, 31, 12, 0, 0).unwrap();
+        assert_eq!(render_at("{date+1m}", jan_31, false), "2026-02-28");
+    }
+
+    #[test]
+    fn unreadable_date_maths_is_left_as_written() {
+        for text in ["{date+}", "{date+x}", "{date+1q}", "{date-+1}", "{date+99999999999}", "{date+4000000000y}", "{date+1"] {
+            assert_eq!(at(text), text);
+        }
     }
 
     #[test]

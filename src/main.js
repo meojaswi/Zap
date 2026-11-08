@@ -181,25 +181,29 @@ function renderList() {
     .join("");
 }
 
-function select(id) {
+/** Opens a snippet, or with `copyOf`, a new one filled in from that snippet. */
+function select(id, copyOf = null) {
   selectedId = id;
-  const snippet = state.snippets.find((s) => s.id === id);
+  const snippet = copyOf ?? state.snippets.find((s) => s.id === id);
   const creating = id === "";
   $("welcome").hidden = true;
   $("form").hidden = false;
-  $("f-name").value = snippet?.name ?? "";
-  $("f-trigger").value = snippet?.trigger ?? "`";
+  $("f-name").value = copyOf ? `${copyOf.name} copy` : snippet?.name ?? "";
+  // A copy needs its own trigger, so only the leading symbol carries over.
+  $("f-trigger").value = copyOf ? (/^[\p{L}\p{N}]/u.test(copyOf.trigger) ? "" : [...copyOf.trigger][0]) : snippet?.trigger ?? "`";
   $("f-content").value = snippet?.content ?? "";
   $("f-sensitive").checked = snippet?.sensitive ?? false;
   $("f-rich-editor").innerHTML = snippet?.html ? sanitizeHtml(snippet.html) : "";
   setRich(Boolean(snippet?.html));
   $("f-group").value = snippet?.group ?? "";
   $("delete-btn").hidden = creating;
+  generator.reset();
+  $("duplicate-btn").hidden = creating;
   renderUsage();
   renderSecondary();
   updatePreview();
   renderList();
-  (creating ? $("f-name") : isRich() ? $("f-rich-editor") : $("f-content")).focus();
+  (copyOf ? $("f-trigger") : creating ? $("f-name") : isRich() ? $("f-rich-editor") : $("f-content")).focus();
 }
 
 function closeEditor() {
@@ -297,9 +301,9 @@ function secondaryTrigger(trigger, prefix = state.settings.secondaryPrefix) {
 
 function renderSecondary() {
   const hint = $("f-secondary");
-  const alt = secondaryTrigger($("f-trigger").value.trim());
-  hint.hidden = !alt;
-  if (alt) hint.innerHTML = `Also works as <code>${escapeHtml(alt)}</code>`;
+  const advice = triggerAdvice($("f-trigger").value.trim(), state.settings.secondaryPrefix);
+  hint.hidden = !advice;
+  hint.innerHTML = advice;
 
   if (document.activeElement !== $("secondary-prefix")) $("secondary-prefix").value = state.settings.secondaryPrefix || "";
   const example = state.snippets.map((s) => s.trigger).find((t) => secondaryTrigger(t)) || "`email";
@@ -314,6 +318,7 @@ function renderSecondary() {
 function renderSettings() {
   if (!$("hotkey").classList.contains("recording")) $("hotkey").value = state.settings.hotkey;
   if (!$("save-hotkey").classList.contains("recording")) $("save-hotkey").value = state.settings.saveHotkey || "Off";
+  renderAi();
   $("inline").checked = state.settings.inlineEnabled;
   $("autostart").checked = state.autostart;
   $("check-updates").checked = state.settings.checkUpdates;
@@ -410,6 +415,7 @@ $("new-btn").addEventListener("click", () => select(""));
 $("form").addEventListener("submit", save);
 $("cancel-btn").addEventListener("click", closeEditor);
 $("delete-btn").addEventListener("click", remove);
+$("duplicate-btn").addEventListener("click", () => select("", state.snippets.find((s) => s.id === selectedId)));
 $("f-content").addEventListener("input", updatePreview);
 $("f-rich-editor").addEventListener("input", updatePreview);
 // Pasted formatting (from a web page, Word...) is cleaned down to what snippets support.
@@ -624,3 +630,54 @@ themeButtons.forEach((b) => b.addEventListener("click", () => {
   showTheme();
 }));
 showTheme();
+
+// ---------- AI generation ----------
+
+const generator = wireGenerate({
+  button: $("f-generate"),
+  undo: $("f-generate-undo"),
+  fields: [$("f-content"), $("f-rich-editor")],
+  getText: currentContent,
+  setText(text) {
+    if (isRich()) $("f-rich-editor").innerHTML = plainToHtml(text);
+    else $("f-content").value = text;
+    updatePreview();
+  },
+  blocked: () => ($("f-sensitive").checked ? "Sensitive snippets are never sent to AI. Untick Sensitive to use Generate." : ""),
+  showError: (e) => toast(e, true),
+});
+
+function renderAi() {
+  const provider = state.settings.aiProvider || "";
+  $("ai-provider").value = provider;
+  $("ai-details").hidden = !provider;
+  if (!provider) return;
+  const saved = state.aiKeySaved.includes(provider);
+  $("ai-key-remove").hidden = !saved;
+  $("ai-key-status").textContent = saved ? "A key is saved, encrypted on this PC." : "No key saved yet.";
+  $("ai-model").placeholder = state.aiDefaultModels[provider];
+  if (document.activeElement !== $("ai-model")) $("ai-model").value = state.settings.aiModel || "";
+}
+
+$("ai-provider").addEventListener("change", (e) =>
+  updateSettings({ aiProvider: e.target.value, aiModel: "" }, e.target.value ? "AI provider saved" : "AI generation off")
+);
+$("ai-model").addEventListener("change", (e) => updateSettings({ aiModel: e.target.value }, "Model saved"));
+
+async function setAiKey(key, message) {
+  try {
+    await invoke("set_ai_key", { provider: state.settings.aiProvider, key });
+    $("ai-key").value = "";
+    await load();
+    toast(message);
+  } catch (e) {
+    toast(e, true);
+  }
+}
+
+$("ai-key-save").addEventListener("click", () => {
+  const key = $("ai-key").value.trim();
+  if (!key) return toast("Paste your API key first", true);
+  setAiKey(key, "API key saved");
+});
+$("ai-key-remove").addEventListener("click", () => setAiKey("", "API key removed"));

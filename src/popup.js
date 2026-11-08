@@ -109,6 +109,13 @@ resultsEl.addEventListener("click", (e) => {
 // ---------- New snippet ----------
 
 const $ = (id) => document.getElementById(id);
+let secondaryPrefix = "";
+
+function renderTriggerHint() {
+  const advice = triggerAdvice($("add-trigger").value.trim(), secondaryPrefix);
+  $("add-trigger-hint").hidden = !advice;
+  $("add-trigger-hint").innerHTML = advice;
+}
 
 function showForm(open) {
   $("add-form").hidden = !open;
@@ -123,10 +130,12 @@ function openForm(query = "") {
   const words = query.trim();
   $("add-name").value = words;
   $("add-trigger").value = "`" + words.toLowerCase().replace(/\s+/g, "");
+  renderTriggerHint();
   $("add-content").value = "";
   $("add-rich-editor").innerHTML = "";
   richBackup = null;
   setRich(false);
+  generator.reset();
   $("add-link-row").hidden = true;
   $("add-error").hidden = true;
   showForm(true);
@@ -210,7 +219,7 @@ async function saveNew() {
     const saved = await invoke("save_snippet", {
       snippet: { id: "", name: $("add-name").value, trigger: $("add-trigger").value, content: isRich() ? richText() : $("add-content").value, sensitive: false, group: "", html: isRich() ? sanitizeHtml($("add-rich-editor").innerHTML) : null },
     });
-    snippets = (await invoke("get_data")).snippets;
+    await reloadData();
     closeForm();
     // Show the new snippet selected, so Enter inserts it straight away.
     input.value = saved.trigger;
@@ -265,6 +274,20 @@ $("add-link").addEventListener("keydown", (e) => {
   }
 });
 
+$("add-trigger").addEventListener("input", renderTriggerHint);
+const generator = wireGenerate({
+  button: $("add-generate"),
+  undo: $("add-generate-undo"),
+  fields: [$("add-content"), $("add-rich-editor")],
+  getText: () => (isRich() ? richText() : $("add-content").value),
+  setText(text) {
+    if (isRich()) $("add-rich-editor").innerHTML = plainToHtml(text);
+    else $("add-content").value = text;
+  },
+  blocked: () => "",
+  showError: showFormError,
+});
+
 $("new-btn").addEventListener("click", () => openForm());
 $("add-save").addEventListener("click", saveNew);
 $("add-cancel").addEventListener("click", closeForm);
@@ -290,9 +313,15 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+async function reloadData() {
+  const data = await invoke("get_data");
+  snippets = data.snippets;
+  secondaryPrefix = data.settings.secondaryPrefix;
+}
+
 async function refresh() {
   showForm(false);
-  snippets = (await invoke("get_data")).snippets;
+  await reloadData();
   input.value = "";
   search();
   input.focus();
@@ -303,7 +332,7 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 listen("popup-shown", refresh);
 listen("popup-new-from-selection", async (e) => {
-  snippets = (await invoke("get_data")).snippets;
+  await reloadData();
   input.value = "";
   search();
   openForm();
@@ -311,7 +340,7 @@ listen("popup-new-from-selection", async (e) => {
   else showFormError(e.payload.error);
 });
 listen("data-changed", async () => {
-  snippets = (await invoke("get_data")).snippets;
+  await reloadData();
   search();
 });
 refresh();

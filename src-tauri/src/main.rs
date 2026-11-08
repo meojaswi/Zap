@@ -1,6 +1,7 @@
 // Hide the console window in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod ai;
 mod clipboard;
 mod crypto;
 mod expand;
@@ -89,6 +90,9 @@ struct AppData {
     app_version: String,
     update_version: Option<String>,
     update_ready: Option<String>,
+    /// Providers that have a key saved; the keys themselves stay in the backend.
+    ai_key_saved: Vec<String>,
+    ai_default_models: HashMap<String, String>,
 }
 
 fn show_main(app: &AppHandle) {
@@ -225,6 +229,8 @@ fn get_data(app: AppHandle) -> AppData {
         app_version: app.package_info().version.to_string(),
         update_version: updater::pending_version(),
         update_ready: updater::ready_version(),
+        ai_key_saved: data.ai_keys.keys().cloned().collect(),
+        ai_default_models: ai::PROVIDERS.iter().map(|p| (p.to_string(), ai::default_model(p).to_string())).collect(),
     }
 }
 
@@ -319,6 +325,10 @@ fn delete_snippet(app: AppHandle, id: String) -> Result<(), String> {
 fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String> {
     settings.hotkey = settings.hotkey.trim().to_string();
     settings.save_hotkey = settings.save_hotkey.trim().to_string();
+    settings.ai_model = settings.ai_model.trim().to_string();
+    if !ai::PROVIDERS.contains(&settings.ai_provider.as_str()) {
+        settings.ai_provider.clear();
+    }
     settings.typing_wpm = settings.typing_wpm.clamp(5, 300);
     settings.secondary_prefix = settings.secondary_prefix.trim().to_string();
     store::validate_prefix(&shared().data.read().unwrap().snippets, &settings.secondary_prefix)?;
@@ -346,6 +356,24 @@ fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String>
             data.last_ping = None;
         }
         data.settings = settings;
+    }
+    save_and_notify(&app)
+}
+
+/// Saves or, with an empty key, removes the API key for a provider.
+#[tauri::command]
+fn set_ai_key(app: AppHandle, provider: String, key: String) -> Result<(), String> {
+    if !ai::PROVIDERS.contains(&provider.as_str()) {
+        return Err("Unknown AI provider".to_string());
+    }
+    let key = key.trim().to_string();
+    {
+        let mut data = shared().data.write().unwrap();
+        if key.is_empty() {
+            data.ai_keys.remove(&provider);
+        } else {
+            data.ai_keys.insert(provider, key);
+        }
     }
     save_and_notify(&app)
 }
@@ -690,6 +718,8 @@ fn main() {
             set_paused,
             insert_snippet,
             hide_popup,
+            set_ai_key,
+            ai::generate_text,
             preview,
             export_snippets,
             import_snippets,

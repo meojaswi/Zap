@@ -62,11 +62,15 @@ pub struct Settings {
     pub auto_update: bool,
     /// Copies the selection into a new snippet from any app; empty turns it off.
     pub save_hotkey: String,
+    /// "claude", "chatgpt", "grok" or "gemini"; empty means AI generation is off.
+    pub ai_provider: String,
+    /// Model to use; empty means the provider's default.
+    pub ai_model: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new(), usage_ping: true, auto_update: true, save_hotkey: "Ctrl+Alt+Shift+S".into() }
+        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new(), usage_ping: true, auto_update: true, save_hotkey: "Ctrl+Alt+Shift+S".into(), ai_provider: String::new(), ai_model: String::new() }
     }
 }
 
@@ -81,6 +85,8 @@ pub struct Data {
     pub last_ping: Option<String>,
     /// Version being installed automatically; on the next start Zap stays in the tray and says so.
     pub quiet_restart: Option<String>,
+    /// The user's API keys by provider. Encrypted with everything else, and never sent to the windows.
+    pub ai_keys: std::collections::HashMap<String, String>,
 }
 
 pub struct Shared {
@@ -152,6 +158,7 @@ fn seed() -> Data {
         install_id: String::new(),
         last_ping: None,
         quiet_restart: None,
+        ai_keys: Default::default(),
     }
 }
 
