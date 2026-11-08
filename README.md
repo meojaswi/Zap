@@ -21,6 +21,7 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 - **Placeholders**: `{date}`, `{time}`, `{clipboard}` and more are filled in at the moment a snippet is inserted.
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
+- **Groups**: sort snippets into groups like Work or College, shown as collapsible sections.
 - **Usage stats**: see how often you use each snippet and roughly how much typing time Zap has saved you.
 - **Stays out of the way**: lives in the tray, starts with Windows, and pauses with a double-click on the tray icon.
 - **Import / export** snippets as JSON.
@@ -35,6 +36,10 @@ A trigger is the short text you type to insert a snippet. It needs at least 2 ch
 Starting triggers with `` ` `` keeps them from firing by accident, but some websites block special characters like `` ` `` or `$` in their fields.
 
 For those, set a **secondary trigger prefix** once in **Settings**, made of letters like `zz`. Every trigger that starts with a symbol then also works with the prefix in its place, so `` `email `` also works as `zzemail` and `` `today `` as `zztoday`. Triggers that already start with a letter work everywhere, so they stay as they are. You can change the prefix any time, or clear it to turn this off. You can also insert any snippet from the search popup.
+
+### Groups
+
+Give a snippet a **Group** in the editor, like `Work`, `College` or `Email`. The field suggests the groups you already have. In the list, snippets appear under their group's heading; click a heading to collapse or expand it, and Zap remembers which ones are collapsed. Snippets without a group appear under **Ungrouped**, and if none have a group, the list looks the same as before. Searching matches group names too and shows matches even in collapsed groups, and the search popup shows each snippet's group. Exports keep groups.
 
 ### Starter snippets
 

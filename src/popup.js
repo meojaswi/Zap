@@ -14,7 +14,7 @@ function escapeHtml(text) {
   return div.innerHTML.replace(/"/g, "&quot;");
 }
 
-// Exact trigger first, then trigger prefix, then name, then content.
+// Exact trigger first, then trigger prefix, then name, then group, then content.
 function score(snippet, query) {
   const trigger = snippet.trigger.toLowerCase();
   const bare = trigger.replace(/^`/, "");
@@ -23,6 +23,7 @@ function score(snippet, query) {
   if (trigger.startsWith(query) || bare.startsWith(query)) return 80;
   if (name.startsWith(query)) return 60;
   if (name.includes(query) || trigger.includes(query)) return 40;
+  if ((snippet.group || "").toLowerCase().includes(query)) return 30;
   if (!snippet.sensitive && snippet.content.toLowerCase().includes(query)) return 20;
   return 0;
 }
@@ -51,7 +52,7 @@ function render() {
       <div class="result ${i === active ? "active" : ""}" data-index="${i}">
         <span class="result-trigger">${escapeHtml(s.trigger)}</span>
         <div class="result-main">
-          <div class="result-name">${escapeHtml(s.name.toLowerCase())}</div>
+          <div class="result-name">${escapeHtml(s.name.toLowerCase())}${s.group ? `<span class="result-group"> · ${escapeHtml(s.group.toLowerCase())}</span>` : ""}</div>
           <div class="result-preview">${s.sensitive ? "[locked]" : escapeHtml(s.content.replace(/\s+/g, " "))}</div>
         </div>
       </div>`

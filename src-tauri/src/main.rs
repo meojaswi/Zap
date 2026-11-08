@@ -183,6 +183,7 @@ fn save_snippet(app: AppHandle, mut snippet: Snippet) -> Result<Snippet, String>
     if snippet.name.is_empty() {
         snippet.name = snippet.trigger.clone();
     }
+    snippet.group = snippet.group.trim().to_string();
     {
         let mut data = shared().data.write().unwrap();
         store::validate(&data.snippets, &snippet, &data.settings.secondary_prefix)?;
@@ -384,6 +385,8 @@ fn preview(content: String) -> String {
 struct FileSnippet {
     #[serde(default)]
     name: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    group: String,
     trigger: String,
     content: String,
     #[serde(default)]
@@ -402,6 +405,7 @@ fn export_json(snippets: &[Snippet]) -> Result<String, String> {
         .iter()
         .map(|s| FileSnippet {
             name: s.name.clone(),
+            group: s.group.clone(),
             trigger: s.trigger.clone(),
             content: s.content.clone(),
             sensitive: s.sensitive,
@@ -455,6 +459,7 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
                 trigger: item.trigger.trim().to_string(),
                 content: item.content,
                 sensitive: item.sensitive,
+                group: item.group.trim().to_string(),
                 uses: 0,
                 chars_saved: 0,
                 last_used: None,
@@ -636,6 +641,7 @@ mod tests {
             trigger: "`aadhar".into(),
             content: "123456789012".into(),
             sensitive: true,
+            group: "Personal".into(),
             uses: 12,
             chars_saved: 60,
             last_used: Some("2026-11-06".into()),
@@ -643,6 +649,6 @@ mod tests {
         let json = export_json(&[snippet]).unwrap();
         let fields: serde_json::Value = serde_json::from_str(&json).unwrap();
         let keys: Vec<&str> = fields[0].as_object().unwrap().keys().map(String::as_str).collect();
-        assert_eq!(keys, ["content", "name", "sensitive", "trigger"]);
+        assert_eq!(keys, ["content", "group", "name", "sensitive", "trigger"]);
     }
 }

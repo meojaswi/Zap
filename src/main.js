@@ -112,29 +112,67 @@ function renderStatus() {
   $("update-text").textContent = `Zap ${state.updateVersion} is available.`;
 }
 
+// Collapsed group names, remembered per viewer. Storage can be unavailable, so it's optional.
+const COLLAPSED_KEY = "zap.collapsedGroups";
+let collapsed = new Set();
+try {
+  collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY) || "[]"));
+} catch {}
+
+function toggleGroup(name) {
+  collapsed.has(name) ? collapsed.delete(name) : collapsed.add(name);
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...collapsed]));
+  } catch {}
+  renderList();
+}
+
+function groupNames() {
+  return [...new Set(state.snippets.map((s) => (s.group || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+function itemHtml(s) {
+  return `
+      <button class="item ${s.id === selectedId ? "active" : ""}" data-id="${s.id}" title="${escapeHtml(s.name)}">
+        <span class="item-trigger">${escapeHtml(s.trigger)}</span>
+        <span class="item-name">${escapeHtml(s.name.toLowerCase())}${s.sensitive ? ' <span class="lock" title="Sensitive">[locked]</span>' : ""}</span>
+      </button>`;
+}
+
 function renderList() {
   const query = $("search").value.trim().toLowerCase();
   const items = state.snippets
     .filter((s) => {
       if (!query) return true;
-      const haystack = [s.name, s.trigger, s.sensitive ? "" : s.content].join(" ").toLowerCase();
+      const haystack = [s.name, s.trigger, s.group || "", s.sensitive ? "" : s.content].join(" ").toLowerCase();
       return haystack.includes(query);
     })
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  $("group-list").innerHTML = groupNames().map((g) => `<option value="${escapeHtml(g)}"></option>`).join("");
 
   const list = $("list");
   if (!items.length) {
     list.innerHTML = `<div class="empty">${state.snippets.length ? "No matches" : "No snippets yet"}</div>`;
     return;
   }
-  list.innerHTML = items
-    .map(
-      (s) => `
-      <button class="item ${s.id === selectedId ? "active" : ""}" data-id="${s.id}" title="${escapeHtml(s.name)}">
-        <span class="item-trigger">${escapeHtml(s.trigger)}</span>
-        <span class="item-name">${escapeHtml(s.name.toLowerCase())}${s.sensitive ? ' <span class="lock" title="Sensitive">[locked]</span>' : ""}</span>
-      </button>`
-    )
+  // Without any groups, keep the plain list.
+  if (!groupNames().length) {
+    list.innerHTML = items.map(itemHtml).join("");
+    return;
+  }
+  const sections = [...groupNames(), ""]
+    .map((name) => ({ name, members: items.filter((s) => (s.group || "").trim() === name) }))
+    .filter((section) => section.members.length);
+  list.innerHTML = sections
+    .map(({ name, members }) => {
+      // While searching, show every match even in collapsed groups.
+      const open = query || !collapsed.has(name);
+      return `
+      <button class="group-head" data-group="${escapeHtml(name)}" aria-expanded="${open}">
+        <span class="group-arrow">${open ? "▾" : "▸"}</span>${escapeHtml(name || "Ungrouped")}<span class="group-count">${members.length}</span>
+      </button>${open ? members.map(itemHtml).join("") : ""}`;
+    })
     .join("");
 }
 
@@ -148,6 +186,7 @@ function select(id) {
   $("f-trigger").value = snippet?.trigger ?? "`";
   $("f-content").value = snippet?.content ?? "";
   $("f-sensitive").checked = snippet?.sensitive ?? false;
+  $("f-group").value = snippet?.group ?? "";
   $("delete-btn").hidden = creating;
   renderUsage();
   renderSecondary();
@@ -192,6 +231,7 @@ async function save(event) {
         trigger: $("f-trigger").value,
         content: $("f-content").value,
         sensitive: $("f-sensitive").checked,
+        group: $("f-group").value,
       },
     });
     await load();
@@ -314,6 +354,11 @@ document.querySelectorAll(".tab").forEach((tab) =>
 );
 
 $("list").addEventListener("click", (e) => {
+  const head = e.target.closest(".group-head");
+  if (head) {
+    toggleGroup(head.dataset.group);
+    return;
+  }
   const item = e.target.closest(".item");
   if (item) select(item.dataset.id);
 });
