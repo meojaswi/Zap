@@ -272,7 +272,8 @@ export default function App() {
             <p className="label text-accent">ready</p>
             <h2 className="mt-5 text-4xl font-medium leading-[1.04] tracking-tight sm:text-[56px]">Start zapping.</h2>
             <p className="mx-auto mt-6 max-w-md text-sm leading-[1.6] text-muted">
-              Free and open source. If Windows shows a SmartScreen warning — the installer isn't code-signed yet —
+              Free and open source. The installer isn't code-signed yet, so if Edge says it isn't commonly downloaded,
+              choose <span className="text-white">… → Keep → Show more → Keep anyway</span>. If Windows shows a warning,
               click <span className="text-white">More info → Run anyway</span>.
             </p>
             <div className="mt-10 flex justify-center">
