@@ -158,7 +158,8 @@ fn extract_text(provider: &str, response: &Value) -> Result<String, String> {
 
 fn api_error(provider: &str, status: u16, response: &Value) -> String {
     let name = display_name(provider);
-    let detail = response["error"]["message"].as_str().unwrap_or("");
+    // xAI sends the error as a plain string; the others nest it under "message".
+    let detail = response["error"]["message"].as_str().or(response["error"].as_str()).unwrap_or("");
     match status {
         401 | 403 => format!("{name} didn't accept that API key. Check it in Settings → AI generation."),
         429 => format!("{name} says you've hit a rate limit or run out of credit. {detail}").trim().to_string(),
@@ -291,6 +292,7 @@ mod tests {
         assert!(api_error("claude", 401, &json!({})).contains("API key"));
         assert!(api_error("gemini", 429, &json!({ "error": { "message": "quota" } })).contains("quota"));
         assert_eq!(api_error("grok", 400, &json!({ "error": { "message": "bad model" } })), "Grok: bad model");
+        assert_eq!(api_error("grok", 400, &json!({ "error": "Incorrect API key" })), "Grok: Incorrect API key");
         assert!(api_error("chatgpt", 500, &serde_json::Value::Null).contains("500"));
     }
 }
