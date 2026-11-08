@@ -324,8 +324,35 @@ function wireImages({ editor, toolbar, showError, keepOpen = () => {} }) {
   });
   picker.addEventListener("cancel", () => keepOpen(false));
 
-  editor.addEventListener("click", (e) => select(e.target.tagName === "IMG" ? e.target : null));
-  editor.addEventListener("keydown", () => select(null));
+  function caretAfter(image) {
+    const range = document.createRange();
+    range.setStartAfter(image);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  editor.addEventListener("click", (e) => {
+    const image = e.target.tagName === "IMG" ? e.target : null;
+    select(image);
+    // Clicking a picture doesn't move the caret to it, so keys would act somewhere else in the text.
+    if (image) {
+      editor.focus();
+      caretAfter(image);
+    }
+  });
+  editor.addEventListener("keydown", (e) => {
+    if (selected && (e.key === "Delete" || e.key === "Backspace")) {
+      e.preventDefault();
+      caretAfter(selected);
+      selected.remove();
+      select(null);
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
+    select(null);
+  });
 
   return {
     /** Shows the pictures of HTML just placed in the editor. */
