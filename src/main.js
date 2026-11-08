@@ -186,13 +186,15 @@ function select(id) {
   $("f-trigger").value = snippet?.trigger ?? "`";
   $("f-content").value = snippet?.content ?? "";
   $("f-sensitive").checked = snippet?.sensitive ?? false;
+  $("f-rich-editor").innerHTML = snippet?.html ? sanitizeHtml(snippet.html) : "";
+  setRich(Boolean(snippet?.html));
   $("f-group").value = snippet?.group ?? "";
   $("delete-btn").hidden = creating;
   renderUsage();
   renderSecondary();
   updatePreview();
   renderList();
-  (creating ? $("f-name") : $("f-content")).focus();
+  (creating ? $("f-name") : isRich() ? $("f-rich-editor") : $("f-content")).focus();
 }
 
 function closeEditor() {
@@ -203,17 +205,78 @@ function closeEditor() {
   renderUsage();
 }
 
+// ---------- Formatting ----------
+
+// Formatting a snippet can carry; everything else is unwrapped to its text, and links keep only
+// web or mail addresses.
+const RICH_TAGS = new Set(["B", "STRONG", "I", "EM", "U", "A", "BR", "P", "DIV", "UL", "OL", "LI"]);
+const DROPPED_TAGS = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "TEMPLATE", "HEAD", "TITLE", "META", "LINK"]);
+
+function sanitizeHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  const clean = (node) => {
+    for (const child of [...node.childNodes]) {
+      if (child.nodeType === Node.TEXT_NODE) continue;
+      if (child.nodeType !== Node.ELEMENT_NODE || DROPPED_TAGS.has(child.tagName)) {
+        child.remove();
+        continue;
+      }
+      clean(child);
+      if (!RICH_TAGS.has(child.tagName)) {
+        child.replaceWith(...child.childNodes);
+        continue;
+      }
+      const href = child.tagName === "A" ? (child.getAttribute("href") || "").trim() : "";
+      for (const attr of [...child.attributes]) child.removeAttribute(attr.name);
+      if (/^(https?:|mailto:)/i.test(href)) child.setAttribute("href", href);
+    }
+  };
+  clean(template.content);
+  return template.innerHTML;
+}
+
+function plainToHtml(text) {
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
+function isRich() {
+  return $("f-rich").checked;
+}
+
+/** The snippet's plain text: what's typed into apps without formatting, and what search uses. */
+function currentContent() {
+  return isRich() ? $("f-rich-editor").innerText.replace(/\n$/, "") : $("f-content").value;
+}
+
+function setRich(on) {
+  $("f-rich").checked = on;
+  $("f-content").hidden = on;
+  $("f-rich-editor").hidden = !on;
+  $("f-rich-toolbar").hidden = !on;
+  // Formatted snippets are pasted, so they can't be Sensitive (typed) as well.
+  if (on) $("f-sensitive").checked = false;
+  $("f-sensitive").disabled = on;
+  $("f-rich").disabled = !on && $("f-sensitive").checked;
+}
+
 let previewTimer;
 function updatePreview() {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(async () => {
-    const content = $("f-content").value;
+    const content = currentContent();
     $("preview-field").hidden = !/\{(date|time|datetime|day|clipboard|uuid|input)(:[^}]*)?\}/.test(content);
     if (!$("preview-field").hidden) $("preview").textContent = await invoke("preview", { content });
   }, 150);
 }
 
 function insertPlaceholder(text) {
+  if (isRich()) {
+    $("f-rich-editor").focus();
+    document.execCommand("insertText", false, text);
+    updatePreview();
+    return;
+  }
   const area = $("f-content");
   const start = area.selectionStart;
   area.setRangeText(text, start, area.selectionEnd, "end");
@@ -229,7 +292,8 @@ async function save(event) {
         id: selectedId || "",
         name: $("f-name").value,
         trigger: $("f-trigger").value,
-        content: $("f-content").value,
+        content: currentContent(),
+        html: isRich() ? sanitizeHtml($("f-rich-editor").innerHTML) : null,
         sensitive: $("f-sensitive").checked,
         group: $("f-group").value,
       },
@@ -368,6 +432,47 @@ $("form").addEventListener("submit", save);
 $("cancel-btn").addEventListener("click", closeEditor);
 $("delete-btn").addEventListener("click", remove);
 $("f-content").addEventListener("input", updatePreview);
+$("f-rich-editor").addEventListener("input", updatePreview);
+// Pasted formatting (from a web page, Word...) is cleaned down to what snippets support.
+$("f-rich-editor").addEventListener("paste", (e) => {
+  e.preventDefault();
+  const html = e.clipboardData.getData("text/html");
+  document.execCommand("insertHTML", false, html ? sanitizeHtml(html) : plainToHtml(e.clipboardData.getData("text/plain")));
+});
+$("f-rich").addEventListener("change", (e) => {
+  const editor = $("f-rich-editor");
+  if (e.target.checked) {
+    editor.innerHTML = plainToHtml($("f-content").value);
+    setRich(true);
+    editor.focus();
+  } else {
+    if (editor.querySelector("b, strong, i, em, u, a, ul, ol") && !confirm("Turn off formatting? Bold, italic, links and lists will be removed.")) {
+      e.target.checked = true;
+      return;
+    }
+    $("f-content").value = editor.innerText.replace(/\n$/, "");
+    setRich(false);
+  }
+  updatePreview();
+});
+$("f-sensitive").addEventListener("change", (e) => {
+  $("f-rich").disabled = e.target.checked;
+});
+document.querySelectorAll("#f-rich-toolbar [data-cmd]").forEach((button) =>
+  // mousedown + preventDefault keeps the text selection in the editor.
+  button.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const command = button.dataset.cmd;
+    if (command === "createLink") {
+      const url = (prompt("Link address", "https://") || "").trim();
+      if (!/^(https?:\/\/\S+|mailto:\S+)$/i.test(url)) return;
+      document.execCommand("createLink", false, url);
+    } else {
+      document.execCommand(command, false);
+    }
+    updatePreview();
+  })
+);
 document.querySelectorAll(".chip").forEach((chip) => chip.addEventListener("click", () => insertPlaceholder(chip.dataset.ph)));
 
 $("status").addEventListener("click", async () => {

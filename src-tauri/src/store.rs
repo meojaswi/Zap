@@ -24,6 +24,10 @@ pub struct Snippet {
     /// Group the snippet is listed under, like "Work"; empty means ungrouped.
     #[serde(default)]
     pub group: String,
+    /// Formatted version (sanitized HTML) for apps that accept it. `content` stays the plain text,
+    /// used for search, previews, stats and apps that only take text.
+    #[serde(default)]
+    pub html: Option<String>,
     /// Usage stats: only counts and the date are kept, never what was typed around the snippet.
     #[serde(default)]
     pub uses: u64,
@@ -123,6 +127,7 @@ fn seed() -> Data {
         content: content.into(),
         sensitive: false,
         group: String::new(),
+        html: None,
         uses: 0,
         chars_saved: 0,
         last_used: None,
@@ -234,6 +239,7 @@ mod tests {
         let snippet: super::Snippet = serde_json::from_str(r#"{"id":"1","trigger":"`a","content":"x"}"#).unwrap();
         assert_eq!((snippet.uses, snippet.chars_saved, snippet.last_used), (0, 0, None));
         assert_eq!(snippet.group, "");
+        assert_eq!(snippet.html, None);
         let settings: super::Settings = serde_json::from_str(r#"{"hotkey":"F13"}"#).unwrap();
         assert_eq!(settings.typing_wpm, 40);
         assert!(settings.keep_stats);

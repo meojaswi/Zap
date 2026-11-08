@@ -65,7 +65,22 @@ body { -webkit-user-select: none; user-select: none; }
 
 /* No elastic "pull" bounce from a touchpad or touchscreen: the page and its lists stay put at their ends. */
 html, body, .list, .editor, .settings, .popup-list, .textarea { overscroll-behavior: none; }
-input, textarea, .preview-box { -webkit-user-select: text; user-select: text; }
+.field-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+/* The field's own label, styled like the other field labels (the Formatting toggle is the second label). */
+.field-head > label:first-child {
+  margin-bottom: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.inline-check { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--muted); cursor: pointer; }
+.rich-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
+.rich-editor { min-height: 160px; overflow-y: auto; white-space: normal; cursor: text; }
+.rich-editor:focus { outline: none; border-color: var(--border-strong); }
+.rich-editor a { color: var(--accent); }
+.rich-editor ul, .rich-editor ol { margin: 0; padding-left: 1.5em; }
+input, textarea, .preview-box, .rich-editor { -webkit-user-select: text; user-select: text; }
 
 ::selection { background: var(--accent); color: var(--accent-ink); }
 

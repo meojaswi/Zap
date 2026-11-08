@@ -81,23 +81,65 @@ unsafe fn set_global(format: u32, bytes: &[u8]) -> bool {
     true
 }
 
+fn text_bytes(text: &str) -> Vec<u8> {
+    wide(text).iter().flat_map(|u| u.to_le_bytes()).collect()
+}
+
+/// Adds the formats that keep the current clipboard entry out of history and cloud sync.
+/// The clipboard must be open.
+unsafe fn mark_private() {
+    for name in PRIVATE_FORMATS {
+        let format = RegisterClipboardFormatW(wide(name).as_ptr());
+        if format != 0 {
+            set_global(format, &0u32.to_le_bytes());
+        }
+    }
+}
+
 /// Puts text on the clipboard, marked so it stays out of clipboard history and cloud sync.
 pub fn set_text_private(text: &str) -> bool {
-    let utf16 = wide(text);
-    let bytes: Vec<u8> = utf16.iter().flat_map(|u| u.to_le_bytes()).collect();
     unsafe {
         if !open() {
             return false;
         }
         EmptyClipboard();
-        let ok = set_global(TEXT, &bytes);
+        let ok = set_global(TEXT, &text_bytes(text));
         if ok {
-            for name in PRIVATE_FORMATS {
-                let format = RegisterClipboardFormatW(wide(name).as_ptr());
-                if format != 0 {
-                    set_global(format, &0u32.to_le_bytes());
-                }
-            }
+            mark_private();
+        }
+        CloseClipboard();
+        ok
+    }
+}
+
+/// Windows' "HTML Format" payload: a header of byte offsets, then the fragment in a minimal document.
+pub fn cf_html(fragment: &str) -> String {
+    const PREFIX: &str = "<html><body>\r\n<!--StartFragment-->";
+    const SUFFIX: &str = "<!--EndFragment-->\r\n</body></html>";
+    let header = |a: usize, b: usize, c: usize, d: usize| {
+        format!("Version:0.9\r\nStartHTML:{a:010}\r\nEndHTML:{b:010}\r\nStartFragment:{c:010}\r\nEndFragment:{d:010}\r\n")
+    };
+    let start_html = header(0, 0, 0, 0).len();
+    let start_fragment = start_html + PREFIX.len();
+    let end_fragment = start_fragment + fragment.len();
+    let end_html = end_fragment + SUFFIX.len();
+    format!("{}{PREFIX}{fragment}{SUFFIX}", header(start_html, end_html, start_fragment, end_fragment))
+}
+
+/// Puts formatted text on the clipboard with a plain-text version for apps that don't take HTML,
+/// marked so it stays out of clipboard history and cloud sync.
+pub fn set_html_private(html: &str, plain: &str) -> bool {
+    let mut payload = cf_html(html).into_bytes();
+    payload.push(0);
+    unsafe {
+        if !open() {
+            return false;
+        }
+        EmptyClipboard();
+        let format = RegisterClipboardFormatW(wide("HTML Format").as_ptr());
+        let ok = format != 0 && set_global(TEXT, &text_bytes(plain)) && set_global(format, &payload);
+        if ok {
+            mark_private();
         }
         CloseClipboard();
         ok
@@ -110,5 +152,27 @@ pub fn clear() {
             EmptyClipboard();
             CloseClipboard();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::cf_html;
+
+    fn offset(payload: &str, key: &str) -> usize {
+        let start = payload.find(key).unwrap() + key.len();
+        payload[start..start + 10].parse().unwrap()
+    }
+
+    #[test]
+    fn html_format_offsets_point_at_the_fragment_and_document() {
+        let fragment = "<b>Thanks</b> — Zap ⚡";
+        let payload = cf_html(fragment);
+        let (start_html, end_html) = (offset(&payload, "StartHTML:"), offset(&payload, "EndHTML:"));
+        let (start, end) = (offset(&payload, "StartFragment:"), offset(&payload, "EndFragment:"));
+        // Offsets are byte positions in the UTF-8 payload.
+        assert_eq!(&payload.as_bytes()[start..end], fragment.as_bytes());
+        assert!(payload[start_html..].starts_with("<html>"));
+        assert_eq!(end_html, payload.len());
     }
 }

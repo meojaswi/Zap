@@ -19,6 +19,7 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 - **Inline expansion**: type a trigger like `` `addr `` in any app (browser, Slack, Word, your editor) and it's replaced instantly.
 - **Search popup**: press `Ctrl+Shift+Space` anywhere to search snippets by name, trigger or text, then press `Enter` to paste.
 - **Placeholders**: `{date}`, `{time}`, `{clipboard}` and more are filled in at the moment a snippet is inserted.
+- **Formatting**: bold, italic, underline, links and lists, pasted with their formatting into Gmail, Outlook, Word and similar apps.
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
 - **Groups**: sort snippets into groups like Work or College, shown as collapsible sections.
@@ -104,6 +105,12 @@ Your order {input:Order no} has shipped and will reach you by {input:Date}.
 When you use the snippet, Zap opens a small box with one field per label: Name, Order no and Date. Press `Enter` to move to the next field, and `Enter` on the last one to insert the message with your values. `Esc` or clicking away cancels and leaves your trigger as you typed it. A label used more than once is asked once, a snippet can have up to 10 fill-ins, and they work from the search popup too. The editor preview shows them as `[Name]`.
 
 Codes are case-sensitive: `MM` is the month and `mm` is minutes. Put any other words in square brackets, like `{date:[Week of] D MMM}`, so their letters aren't read as codes.
+
+### Formatted snippets
+
+Turn on **Formatting** above a snippet's text to use **bold**, *italic*, underline, links and bullet lists, with the toolbar or `Ctrl+B`, `Ctrl+I` and `Ctrl+U`. Pasting formatted text from a web page or Word keeps only those, and links only keep web and email addresses.
+
+When you use the snippet, Zap pastes the formatted version in apps that accept it, like Gmail, Outlook and Word, and the plain text everywhere else, like Notepad or a search box. Placeholders and fill-ins work inside formatted snippets too. A formatted snippet can't be Sensitive, because it has to be pasted rather than typed. Turning Formatting off keeps the text and removes the formatting.
 
 ### Sensitive snippets
 

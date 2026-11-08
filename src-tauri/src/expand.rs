@@ -108,12 +108,47 @@ pub fn fill_inputs(text: &str, values: &HashMap<String, String>) -> String {
     out
 }
 
-/// Fills in placeholders like {date} and {clipboard}.
-pub fn render(content: &str) -> String {
-    render_at(content, chrono::Local::now())
+fn escape_html(text: &str) -> String {
+    text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;").replace('\'', "&#39;")
 }
 
-fn render_at(content: &str, now: chrono::DateTime<chrono::Local>) -> String {
+fn unescape_html(text: &str) -> String {
+    text.replace("&nbsp;", " ")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
+}
+
+/// Like `fill_inputs`, for a formatted snippet: values are escaped so typed text can't add HTML,
+/// and labels are matched as written (the HTML may store "A&B" as "A&amp;B").
+pub fn fill_inputs_html(html: &str, values: &HashMap<String, String>) -> String {
+    let mut out = String::new();
+    let mut rest = html;
+    while let Some(start) = rest.find("{input:") {
+        let after = &rest[start + "{input:".len()..];
+        let Some(end) = after.find('}') else { break };
+        out.push_str(&rest[..start]);
+        let label = unescape_html(after[..end].trim());
+        out.push_str(&escape_html(values.get(label.trim()).map_or("", String::as_str)));
+        rest = &after[end + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Fills in placeholders like {date} and {clipboard}.
+pub fn render(content: &str) -> String {
+    render_at(content, chrono::Local::now(), false)
+}
+
+/// `render` for a formatted snippet's HTML: clipboard text is escaped so it stays text.
+pub fn render_html(html: &str) -> String {
+    render_at(html, chrono::Local::now(), true)
+}
+
+fn render_at(content: &str, now: chrono::DateTime<chrono::Local>, html: bool) -> String {
     let mut text = content.to_string();
     for name in ["date", "time", "datetime"] {
         text = fill_custom_formats(&text, name, &now);
@@ -127,7 +162,8 @@ fn render_at(content: &str, now: chrono::DateTime<chrono::Local>) -> String {
         text = text.replacen("{uuid}", &uuid::Uuid::new_v4().to_string(), 1);
     }
     if text.contains("{clipboard}") {
-        text = text.replace("{clipboard}", &clipboard::get_text().unwrap_or_default());
+        let copied = clipboard::get_text().unwrap_or_default();
+        text = text.replace("{clipboard}", &if html { escape_html(&copied) } else { copied });
     }
     text
 }
@@ -141,7 +177,11 @@ pub fn deliver(snippet: &Snippet, backspaces: usize) {
 /// Placeholders are filled first, so a typed value like "{date}" is inserted as written.
 pub fn deliver_filled(snippet: &Snippet, backspaces: usize, values: &HashMap<String, String>) {
     let text = fill_inputs(&render(&snippet.content), values);
-    insert(&text, snippet.sensitive, backspaces);
+    // Formatted snippets are pasted; Sensitive ones are always typed as plain text.
+    match snippet.html.as_deref().filter(|_| !snippet.sensitive) {
+        Some(html) => insert_formatted(&fill_inputs_html(&render_html(html), values), &text, backspaces),
+        None => insert(&text, snippet.sensitive, backspaces),
+    }
     // Inline, the trigger typed was `backspaces` + 1 characters (it may be the secondary one).
     let typed = if backspaces > 0 { backspaces + 1 } else { snippet.trigger.chars().count() };
     crate::record_use(&snippet.id, chars_saved(&snippet.content, typed));
@@ -154,13 +194,47 @@ fn chars_saved(content: &str, trigger_len: usize) -> usize {
     typed_for_you.saturating_sub(trigger_len)
 }
 
-fn insert(text: &str, sensitive: bool, backspaces: usize) {
+fn delete_trigger(backspaces: usize) {
     sleep(Duration::from_millis(30));
     if backspaces > 0 {
         input::backspaces(backspaces);
         // Let the app finish deleting before the snippet arrives.
         sleep(Duration::from_millis(50));
     }
+}
+
+/// Pastes what's on the clipboard, then puts the user's previous clipboard text back.
+fn paste_then_restore(previous: Option<String>) {
+    sleep(Duration::from_millis(40));
+    input::ctrl_v();
+    // Give the target app time to read the clipboard before we restore it.
+    sleep(Duration::from_millis(300));
+    match previous {
+        Some(previous) => {
+            clipboard::set_text_private(&previous);
+        }
+        None => clipboard::clear(),
+    }
+}
+
+/// Pastes formatted text; apps that don't take HTML get `plain`.
+fn insert_formatted(html: &str, plain: &str, backspaces: usize) {
+    delete_trigger(backspaces);
+    // An image or files on the clipboard couldn't be put back afterwards, so type the plain text.
+    if clipboard::holds_non_text() {
+        input::type_text(plain);
+        return;
+    }
+    let previous = clipboard::get_text();
+    if !clipboard::set_html_private(html, plain) {
+        input::type_text(plain);
+        return;
+    }
+    paste_then_restore(previous);
+}
+
+fn insert(text: &str, sensitive: bool, backspaces: usize) {
+    delete_trigger(backspaces);
 
     // Typing avoids the clipboard entirely: used for sensitive snippets, and when the clipboard
     // holds an image/files that we couldn't put back afterwards.
@@ -174,16 +248,7 @@ fn insert(text: &str, sensitive: bool, backspaces: usize) {
         input::type_text(text);
         return;
     }
-    sleep(Duration::from_millis(40));
-    input::ctrl_v();
-    // Give the target app time to read the clipboard before we restore it.
-    sleep(Duration::from_millis(300));
-    match previous {
-        Some(previous) => {
-            clipboard::set_text_private(&previous);
-        }
-        None => clipboard::clear(),
-    }
+    paste_then_restore(previous);
 }
 
 #[cfg(test)]
@@ -201,7 +266,7 @@ mod tests {
 
     /// Friday 6 November 2026, 17:05:09.
     fn at(content: &str) -> String {
-        render_at(content, chrono::Local.with_ymd_and_hms(2026, 11, 6, 17, 5, 9).unwrap())
+        render_at(content, chrono::Local.with_ymd_and_hms(2026, 11, 6, 17, 5, 9).unwrap(), false)
     }
 
     #[test]
@@ -270,6 +335,16 @@ mod tests {
     fn fill_in_values_are_not_counted_as_saved() {
         assert_eq!(super::chars_saved("Hi {input:Name}!", 3), 1); // "Hi !" is 4, minus a 3-character trigger
         assert_eq!(super::chars_saved("Hello there {input:Name}", 4), 8);
+    }
+
+    #[test]
+    fn formatted_fill_ins_escape_values_and_match_escaped_labels() {
+        use std::collections::HashMap;
+        let values = HashMap::from([("A&B".to_string(), "<script>x</script> & \"hi\"".to_string())]);
+        assert_eq!(
+            super::fill_inputs_html("<b>{input:A&amp;B}</b>", &values),
+            "<b>&lt;script&gt;x&lt;/script&gt; &amp; &quot;hi&quot;</b>"
+        );
     }
 
     #[test]

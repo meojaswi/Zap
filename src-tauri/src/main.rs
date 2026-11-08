@@ -184,6 +184,10 @@ fn save_snippet(app: AppHandle, mut snippet: Snippet) -> Result<Snippet, String>
         snippet.name = snippet.trigger.clone();
     }
     snippet.group = snippet.group.trim().to_string();
+    snippet.html = snippet.html.take().filter(|h| !h.trim().is_empty());
+    if snippet.sensitive && snippet.html.is_some() {
+        return Err("Formatted snippets are pasted, so they can't be Sensitive".into());
+    }
     {
         let mut data = shared().data.write().unwrap();
         store::validate(&data.snippets, &snippet, &data.settings.secondary_prefix)?;
@@ -391,6 +395,8 @@ struct FileSnippet {
     content: String,
     #[serde(default)]
     sensitive: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    html: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -409,6 +415,7 @@ fn export_json(snippets: &[Snippet]) -> Result<String, String> {
             trigger: s.trigger.clone(),
             content: s.content.clone(),
             sensitive: s.sensitive,
+            html: s.html.clone(),
         })
         .collect();
     serde_json::to_string_pretty(&file).map_err(|e| e.to_string())
@@ -460,6 +467,8 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
                 content: item.content,
                 sensitive: item.sensitive,
                 group: item.group.trim().to_string(),
+                // Sensitive snippets are always typed as plain text.
+                html: item.html.filter(|h| !h.trim().is_empty() && !item.sensitive),
                 uses: 0,
                 chars_saved: 0,
                 last_used: None,
@@ -642,6 +651,7 @@ mod tests {
             content: "123456789012".into(),
             sensitive: true,
             group: "Personal".into(),
+            html: None,
             uses: 12,
             chars_saved: 60,
             last_used: Some("2026-11-06".into()),
