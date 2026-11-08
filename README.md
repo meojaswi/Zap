@@ -22,7 +22,7 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 - **Undo an expansion**: fired a trigger by accident? Press `Backspace` straight away to get your trigger back.
 - **Snippets inside snippets**: reuse a signature or a greeting in other snippets with `{snippet:Name}`.
 - **Placeholders**: `{date}`, `{time}`, `{clipboard}` and more are filled in at the moment a snippet is inserted.
-- **Formatting**: bold, italic, underline, links and lists, pasted with their formatting into Gmail, Outlook, Word and similar apps.
+- **Formatting**: bold, italic, underline, links, lists and images, pasted with their formatting into Gmail, Outlook, Word and similar apps.
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
 - **Groups**: sort snippets into groups like Work or College, shown as collapsible sections.
@@ -162,6 +162,14 @@ Turn on **Formatting** above a snippet's text to use **bold**, *italic*, underli
 
 When you use the snippet, Zap pastes the formatted version in apps that accept it, like Gmail, Outlook and Word, and the plain text everywhere else, like Notepad or a search box. Placeholders and fill-ins work inside formatted snippets too. A formatted snippet can't be Sensitive, because it has to be pasted rather than typed. Turning Formatting off keeps the text and removes the formatting.
 
+### Links and images
+
+Click **Link** above the Text box to add a clickable link. Give it **Display text**, or leave that empty to show the address itself. With Formatting on, typing or pasting a web address makes it a link automatically.
+
+To add a picture like your signature, turn on **Formatting** and click **Image**, or paste one into the box. PNG and JPG are supported, up to 1 MB; bigger pictures are shrunk for you. Click a picture in the box to make it Small, Medium or Large, or remove it.
+
+Pictures paste into apps that accept them, and places that only take plain text get just the text. Your copied text is put back after a formatted snippet pastes, but a copied image or file can't be, so the snippet takes its place on the clipboard. Each picture is encrypted on your PC like your snippets. While pasting into desktop apps like Word, Zap keeps a decrypted copy in your temp folder for a few seconds. Exports include pictures unencrypted, like the rest of the file. Sensitive snippets can't have formatting or pictures, because they're typed rather than pasted.
+
 ### Sensitive snippets
 
 Tick **Sensitive** in the editor for private details like an ID number. Normal snippets are pasted through the clipboard for a moment; Sensitive ones are typed key by key instead, so no other program can read them from the clipboard. They're also marked **[locked]** in the list, and their text is hidden in the search popup and left out of search.
@@ -249,6 +257,7 @@ Inline expansion needs a keyboard hook, so Zap is built to keep as little as pos
 - Snippets are **encrypted on disk** with Windows DPAPI, so only your Windows account can read them.
 - Pasted text is kept **out of Win+V clipboard history and cloud sync**, and your previous clipboard text is put back.
 - Snippets marked **Sensitive** are typed key by key and never touch the clipboard.
+- **Pictures in snippets** are encrypted with Windows DPAPI as separate files. A picture you stop using is deleted the next time Zap starts.
 - Keystrokes are **never logged or saved**. Only the last few characters are held in memory to spot triggers.
 - **Usage stats stay on your PC.** Zap counts how often each snippet is used and the last date, to show the time it saves you. Nothing you type is recorded, stats are encrypted with your snippets and left out of exports, and you can turn them off or reset them in Settings.
 - **No account. Only an anonymous user count.** Zap connects to GitHub to check for updates, and once a day to our server so we can count active users. That check-in sends only a random ID made on your PC and the version number: nothing about you, your PC or your snippets, and the server keeps a count, not the ID. You can turn either off in **Settings**; turning off the user count deletes the ID.

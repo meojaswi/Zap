@@ -1,7 +1,7 @@
 {
   "name": "zap",
   "private": true,
-  "version": "0.2.9",
+  "version": "0.2.10",
   "description": "Zap — type, zap, done. A text expander for Windows.",
   "scripts": {
     "tauri": "tauri",

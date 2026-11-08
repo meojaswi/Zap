@@ -316,7 +316,7 @@ const MAX_UNDO_CHARS: usize = 500;
 /// eat the user's own text, so block-level formatting and emoji (one or several presses, depending
 /// on the app) aren't undoable, and very long text would take too long to remove.
 fn undo_length(text: &str, html: Option<&str>) -> Option<usize> {
-    if html.is_some_and(|h| ["<ul", "<ol", "<li", "<p", "<div"].iter().any(|tag| h.contains(tag))) {
+    if html.is_some_and(|h| ["<ul", "<ol", "<li", "<p", "<div", "<img"].iter().any(|tag| h.contains(tag))) {
         return None;
     }
     if text.chars().any(|c| c as u32 > 0xFFFF || c == '\u{200D}' || c == '\u{FE0F}') {
@@ -427,14 +427,31 @@ fn paste_then_restore(previous: Option<String>) {
 /// Pastes formatted text; apps that don't take HTML get `plain`.
 fn insert_formatted(html: &str, plain: &str, backspaces: usize) {
     delete_trigger(backspaces);
-    // An image or files on the clipboard couldn't be put back afterwards, so type the plain text.
-    if clipboard::holds_non_text() {
-        input::type_text(plain);
-        return;
+    let (html, temporary) = crate::images::for_paste(html);
+    paste_formatted(&html, plain);
+    // Long enough for the app to read a picture, without leaving a decrypted copy around.
+    if !temporary.is_empty() {
+        std::thread::spawn(move || {
+            sleep(Duration::from_secs(15));
+            for path in temporary {
+                let _ = std::fs::remove_file(path);
+            }
+        });
     }
+}
+
+fn paste_formatted(html: &str, plain: &str) {
+    // An image or files on the clipboard can't be put back afterwards, so the snippet replaces
+    // them and stays there as the latest thing copied.
+    let replaces_non_text = clipboard::holds_non_text();
     let previous = clipboard::get_text();
     if !clipboard::set_html_private(html, plain) {
         input::type_text(plain);
+        return;
+    }
+    if replaces_non_text {
+        sleep(Duration::from_millis(40));
+        input::ctrl_v();
         return;
     }
     paste_then_restore(previous);
@@ -622,6 +639,7 @@ mod tests {
         assert_eq!(undo_length("hi", Some("<b>hi</b>")), Some(2));
         assert_eq!(undo_length("one\ntwo", Some("<ul><li>one</li><li>two</li></ul>")), None);
         assert_eq!(undo_length("ok 😀", None), None);
+        assert_eq!(undo_length("hi", Some("hi<img data-zap-id=\"x\">")), None);
         assert_eq!(undo_length("", None), None);
         assert_eq!(undo_length(&"x".repeat(501), None), None);
     }

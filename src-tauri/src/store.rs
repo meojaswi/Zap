@@ -163,6 +163,10 @@ fn seed() -> Data {
 }
 
 impl Shared {
+    pub fn images_dir(&self) -> PathBuf {
+        self.path.parent().map_or_else(|| PathBuf::from("images"), |dir| dir.join("images"))
+    }
+
     pub fn save(&self) -> Result<(), String> {
         let json = serde_json::to_vec(&*self.data.read().unwrap()).map_err(|e| e.to_string())?;
         let encrypted = crypto::protect(&json)?;
@@ -217,7 +221,8 @@ pub fn validate(snippets: &[Snippet], candidate: &Snippet, prefix: &str) -> Resu
     if trigger.chars().any(char::is_whitespace) {
         return Err("Trigger can't contain spaces".into());
     }
-    if candidate.content.is_empty() {
+    // A signature can be only a picture, with no text.
+    if candidate.content.is_empty() && !candidate.html.as_deref().is_some_and(|h| h.contains("data-zap-id")) {
         return Err("Text can't be empty".into());
     }
     let mine = trigger_forms(trigger, prefix);

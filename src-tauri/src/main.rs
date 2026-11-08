@@ -6,6 +6,7 @@ mod clipboard;
 mod crypto;
 mod expand;
 mod hook;
+mod images;
 mod input;
 mod store;
 mod updater;
@@ -33,6 +34,8 @@ use store::{normalize_app, shared, Settings, Snippet};
 /// The window that was focused before the popup opened; the snippet gets pasted back into it.
 static TARGET_WINDOW: AtomicIsize = AtomicIsize::new(0);
 static HOTKEY_ERROR: Mutex<Option<String>> = Mutex::new(None);
+/// Set while the search box has a file picker open, which would otherwise count as clicking away.
+static KEEP_POPUP: AtomicBool = AtomicBool::new(false);
 /// Id of the save-selection hotkey; any other hotkey is the search box's.
 static SAVE_HOTKEY_ID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 /// Lets code without an AppHandle (like expand::deliver) tell the windows that data changed.
@@ -120,6 +123,7 @@ fn toggle_popup(app: &AppHandle) {
 }
 
 fn show_popup(popup: &WebviewWindow, event: &str, payload: impl Serialize + Clone) {
+    KEEP_POPUP.store(false, Ordering::SeqCst);
     TARGET_WINDOW.store(winutil::foreground_window(), Ordering::SeqCst);
     let _ = popup.center();
     let _ = popup.show();
@@ -360,6 +364,11 @@ fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String>
     save_and_notify(&app)
 }
 
+#[tauri::command]
+fn set_popup_keep_open(keep: bool) {
+    KEEP_POPUP.store(keep, Ordering::SeqCst);
+}
+
 /// Saves or, with an empty key, removes the API key for a provider.
 #[tauri::command]
 fn set_ai_key(app: AppHandle, provider: String, key: String) -> Result<(), String> {
@@ -491,6 +500,8 @@ struct FileSnippet {
     sensitive: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     html: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    images: Option<HashMap<String, String>>,
 }
 
 #[derive(Serialize)]
@@ -510,6 +521,7 @@ fn export_json(snippets: &[Snippet]) -> Result<String, String> {
             content: s.content.clone(),
             sensitive: s.sensitive,
             html: s.html.clone(),
+            images: images::for_export(s.html.as_deref()),
         })
         .collect();
     serde_json::to_string_pretty(&file).map_err(|e| e.to_string())
@@ -547,6 +559,9 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
     {
         let mut data = shared().data.write().unwrap();
         for item in incoming {
+            if let Some(pictures) = &item.images {
+                images::restore(pictures);
+            }
             // Same trigger as an existing snippet: update it in place.
             let id = data
                 .snippets
@@ -683,6 +698,7 @@ fn main() {
                 *HOTKEY_ERROR.lock().unwrap() = Some(e);
             }
             hook::set_enabled(settings.inline_enabled);
+            thread::spawn(images::remove_unused);
             build_tray(app)?;
             updater::start(handle.clone());
             usage::start(handle.clone());
@@ -702,7 +718,7 @@ fn main() {
                 api.prevent_close();
                 let _ = window.hide();
             }
-            WindowEvent::Focused(false) if window.label() == "popup" => {
+            WindowEvent::Focused(false) if window.label() == "popup" && !KEEP_POPUP.load(Ordering::SeqCst) => {
                 let _ = window.hide();
             }
             // Clicking away from the fill-in window cancels it, like Esc.
@@ -719,6 +735,9 @@ fn main() {
             insert_snippet,
             hide_popup,
             set_ai_key,
+            set_popup_keep_open,
+            images::save_image,
+            images::get_image,
             ai::generate_text,
             ai::open_key_page,
             preview,

@@ -112,6 +112,9 @@ html, body, .list, .editor, .settings, .popup-list, .textarea { overscroll-behav
 .rich-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
 .rich-editor { min-height: 160px; overflow-y: auto; white-space: normal; cursor: text; }
 .rich-editor:focus { outline: none; border-color: var(--border-strong); }
+.rich-editor img { max-width: 100%; height: auto; vertical-align: middle; cursor: pointer; }
+.rich-editor img.image-selected { outline: 2px solid var(--accent); outline-offset: 1px; }
+.image-sizes { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
 .rich-editor a { color: var(--accent); }
 .rich-editor ul, .rich-editor ol { margin: 0; padding-left: 1.5em; }
 input, textarea, .preview-box, .rich-editor { -webkit-user-select: text; user-select: text; }
@@ -450,8 +453,10 @@ body.popup { overflow: hidden; }
 .add-form { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
 .add-text { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .add-text .textarea { flex: 1; min-height: 0; resize: none; }
-.add-link { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); }
-.add-link .input { flex: 1; min-width: 0; }
+.link-dialog-back { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); }
+.link-dialog { width: min(420px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-5); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+.link-dialog h3 { margin: 0; font-size: 13px; font-weight: 700; }
+.link-dialog .field { margin: 0; }
 .form-error { color: var(--danger); font-size: 12px; }
 .fill-fields { flex: 1; overflow-y: auto; overscroll-behavior: none; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
 .result {

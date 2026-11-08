@@ -135,8 +135,9 @@ function openForm(query = "") {
   $("add-rich-editor").innerHTML = "";
   richBackup = null;
   setRich(false);
+  formImages.reset();
   generator.reset();
-  $("add-link-row").hidden = true;
+  closeLinkDialog();
   $("add-error").hidden = true;
   showForm(true);
   (words ? $("add-content") : $("add-name")).focus();
@@ -144,7 +145,6 @@ function openForm(query = "") {
 
 // The form's formatting. No confirm() or prompt() here: a dialog takes focus and the popup hides when it loses focus.
 let richBackup = null;
-let linkRange = null;
 
 function isRich() {
   return $("add-rich").checked;
@@ -155,7 +155,7 @@ function setRich(on) {
   $("add-content").hidden = on;
   $("add-rich-editor").hidden = !on;
   $("add-rich-toolbar").hidden = !on;
-  if (!on) $("add-link-row").hidden = true;
+  $("add-link-quick").hidden = on;
 }
 
 function richText() {
@@ -171,45 +171,8 @@ function showFormError(message) {
   $("add-error").hidden = false;
 }
 
-function openLinkRow() {
-  const selection = window.getSelection();
-  const inEditor = selection.rangeCount && $("add-rich-editor").contains(selection.anchorNode);
-  linkRange = inEditor ? selection.getRangeAt(0).cloneRange() : null;
-  $("add-link").value = "https://";
-  $("add-link-row").hidden = false;
-  $("add-link").focus();
-}
-
-function closeLinkRow() {
-  $("add-link-row").hidden = true;
-  $("add-rich-editor").focus();
-  if (linkRange) {
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(linkRange);
-  }
-}
-
-function addLink() {
-  const url = $("add-link").value.trim();
-  if (!/^(https?:\/\/\S+|mailto:\S+)$/i.test(url)) {
-    showFormError("Use a full address starting with https:// or mailto:");
-    return;
-  }
-  $("add-error").hidden = true;
-  closeLinkRow();
-  if (linkRange && !linkRange.collapsed) {
-    document.execCommand("createLink", false, url);
-  } else {
-    // Nothing selected: the address itself becomes the link.
-    const link = document.createElement("a");
-    link.href = url;
-    link.textContent = url;
-    document.execCommand("insertHTML", false, link.outerHTML);
-  }
-}
-
 function closeForm() {
+  closeLinkDialog();
   showForm(false);
   input.focus();
 }
@@ -248,30 +211,26 @@ document.querySelectorAll("#add-rich-toolbar [data-cmd]").forEach((button) =>
   // mousedown + preventDefault keeps the text selection in the editor.
   button.addEventListener("mousedown", (e) => {
     e.preventDefault();
-    if (button.dataset.cmd === "createLink") openLinkRow();
+    if (button.dataset.cmd === "createLink") openLinkDialog($("add-rich-editor"));
     else document.execCommand(button.dataset.cmd, false);
   })
 );
 
 // Pasted formatting (from a web page, Word...) is cleaned down to what snippets support.
-$("add-rich-editor").addEventListener("paste", (e) => {
-  e.preventDefault();
-  const html = e.clipboardData.getData("text/html");
-  document.execCommand("insertHTML", false, html ? sanitizeHtml(html) : plainToHtml(e.clipboardData.getData("text/plain")));
+const formImages = wireImages({
+  editor: $("add-rich-editor"),
+  toolbar: $("add-rich-toolbar"),
+  showError: showFormError,
+  keepOpen: (keep) => invoke("set_popup_keep_open", { keep }),
 });
-
-$("add-link-ok").addEventListener("click", addLink);
-$("add-link").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    e.stopPropagation();
-    addLink();
-  } else if (e.key === "Escape") {
-    e.preventDefault();
-    e.stopPropagation();
-    $("add-error").hidden = true;
-    closeLinkRow();
-  }
+$("add-rich-editor").addEventListener("paste", (e) => pasteRich(e, formImages));
+wireAutoLink($("add-rich-editor"));
+$("add-link-quick").addEventListener("click", () => {
+  $("add-rich").click();
+  const selection = window.getSelection();
+  selection.selectAllChildren($("add-rich-editor"));
+  selection.collapseToEnd();
+  openLinkDialog($("add-rich-editor"));
 });
 
 $("add-trigger").addEventListener("input", renderTriggerHint);

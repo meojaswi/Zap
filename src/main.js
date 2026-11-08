@@ -194,6 +194,7 @@ function select(id, copyOf = null) {
   $("f-content").value = snippet?.content ?? "";
   $("f-sensitive").checked = snippet?.sensitive ?? false;
   $("f-rich-editor").innerHTML = snippet?.html ? sanitizeHtml(snippet.html) : "";
+  editorImages.hydrate();
   setRich(Boolean(snippet?.html));
   $("f-group").value = snippet?.group ?? "";
   $("delete-btn").hidden = creating;
@@ -230,10 +231,9 @@ function setRich(on) {
   $("f-content").hidden = on;
   $("f-rich-editor").hidden = !on;
   $("f-rich-toolbar").hidden = !on;
+  $("f-link").hidden = on;
   // Formatted snippets are pasted, so they can't be Sensitive (typed) as well.
   if (on) $("f-sensitive").checked = false;
-  $("f-sensitive").disabled = on;
-  $("f-rich").disabled = !on && $("f-sensitive").checked;
 }
 
 let previewTimer;
@@ -419,19 +419,21 @@ $("duplicate-btn").addEventListener("click", () => select("", state.snippets.fin
 $("f-content").addEventListener("input", updatePreview);
 $("f-rich-editor").addEventListener("input", updatePreview);
 // Pasted formatting (from a web page, Word...) is cleaned down to what snippets support.
-$("f-rich-editor").addEventListener("paste", (e) => {
-  e.preventDefault();
-  const html = e.clipboardData.getData("text/html");
-  document.execCommand("insertHTML", false, html ? sanitizeHtml(html) : plainToHtml(e.clipboardData.getData("text/plain")));
-});
+$("f-rich-editor").addEventListener("paste", (e) => pasteRich(e, editorImages));
+wireAutoLink($("f-rich-editor"), updatePreview);
 $("f-rich").addEventListener("change", (e) => {
   const editor = $("f-rich-editor");
+  if (e.target.checked && $("f-sensitive").checked) {
+    e.target.checked = false;
+    toast("Sensitive snippets can't be formatted", true);
+    return;
+  }
   if (e.target.checked) {
     editor.innerHTML = plainToHtml($("f-content").value);
     setRich(true);
     editor.focus();
   } else {
-    if (editor.querySelector("b, strong, i, em, u, a, ul, ol") && !confirm("Turn off formatting? Bold, italic, links and lists will be removed.")) {
+    if (editor.querySelector("b, strong, i, em, u, a, ul, ol, img") && !confirm("Turn off formatting? Bold, italic, links, lists and images will be removed.")) {
       e.target.checked = true;
       return;
     }
@@ -440,21 +442,16 @@ $("f-rich").addEventListener("change", (e) => {
   }
   updatePreview();
 });
-$("f-sensitive").addEventListener("change", (e) => {
-  $("f-rich").disabled = e.target.checked;
-});
 document.querySelectorAll("#f-rich-toolbar [data-cmd]").forEach((button) =>
   // mousedown + preventDefault keeps the text selection in the editor.
   button.addEventListener("mousedown", (e) => {
     e.preventDefault();
     const command = button.dataset.cmd;
     if (command === "createLink") {
-      const url = (prompt("Link address", "https://") || "").trim();
-      if (!/^(https?:\/\/\S+|mailto:\S+)$/i.test(url)) return;
-      document.execCommand("createLink", false, url);
-    } else {
-      document.execCommand(command, false);
+      openLinkDialog($("f-rich-editor"), updatePreview);
+      return;
     }
+    document.execCommand(command, false);
     updatePreview();
   })
 );
@@ -764,3 +761,26 @@ document.addEventListener("mousedown", (e) => {
 });
 $("list").addEventListener("scroll", closeSnippetMenu);
 window.addEventListener("blur", closeSnippetMenu);
+
+// ---------- Images and quick links ----------
+
+const editorImages = wireImages({ editor: $("f-rich-editor"), toolbar: $("f-rich-toolbar"), showError: (e) => toast(e, true) });
+
+$("f-sensitive").addEventListener("change", (e) => {
+  if (e.target.checked && isRich()) {
+    e.target.checked = false;
+    toast("Formatted snippets can't be Sensitive", true);
+  }
+});
+
+$("f-link").addEventListener("click", () => {
+  if ($("f-sensitive").checked) {
+    toast("Sensitive snippets can't be formatted", true);
+    return;
+  }
+  $("f-rich").click();
+  const selection = window.getSelection();
+  selection.selectAllChildren($("f-rich-editor"));
+  selection.collapseToEnd();
+  openLinkDialog($("f-rich-editor"), updatePreview);
+});

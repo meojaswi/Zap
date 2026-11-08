@@ -31,7 +31,8 @@
         <div class="field-head">
           <label for="add-content">Text</label>
           <div class="field-tools">
-            <label class="inline-check" title="Bold, italic, links and lists for apps like Gmail, Outlook and Word"><input type="checkbox" id="add-rich"> Formatting</label>
+            <button type="button" class="chip" id="add-link-quick" title="Add a clickable link">Link</button>
+            <label class="inline-check" title="Bold, italic, links, lists and images for apps like Gmail, Outlook and Word"><input type="checkbox" id="add-rich"> Formatting</label>
           </div>
         </div>
         <div class="rich-toolbar" id="add-rich-toolbar" hidden>
@@ -41,10 +42,6 @@
           <button type="button" class="chip" data-cmd="createLink" title="Link">Link</button>
           <button type="button" class="chip" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
           <button type="button" class="chip" data-cmd="removeFormat" title="Remove formatting from the selection">Clear</button>
-        </div>
-        <div class="add-link" id="add-link-row" hidden>
-          <input class="input" id="add-link" placeholder="https://" autocomplete="off" spellcheck="false">
-          <button type="button" class="btn" id="add-link-ok">Add link</button>
         </div>
         <div class="text-box" id="add-text-box">
           <textarea class="textarea" id="add-content" placeholder="The text this trigger becomes" spellcheck="false"></textarea>
