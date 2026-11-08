@@ -241,7 +241,7 @@ function updatePreview() {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(async () => {
     const content = currentContent();
-    $("preview-field").hidden = !/\{(date|time|datetime|day|clipboard|uuid|input)(:[^}]*)?\}/.test(content);
+    $("preview-field").hidden = !/\{(date|time|datetime|day|clipboard|uuid|input|snippet)[:+-][^}]*\}|\{(date|time|datetime|day|clipboard|uuid)\}/.test(content);
     if (!$("preview-field").hidden) $("preview").textContent = await invoke("preview", { content });
   }, 150);
 }
@@ -282,11 +282,11 @@ async function save(event) {
   }
 }
 
-async function remove() {
-  const snippet = state.snippets.find((s) => s.id === selectedId);
+async function remove(id = selectedId) {
+  const snippet = state.snippets.find((s) => s.id === id);
   if (!snippet || !confirm(`Delete "${snippet.name}"?`)) return;
   await invoke("delete_snippet", { id: snippet.id });
-  closeEditor();
+  if (snippet.id === selectedId) closeEditor();
   await load();
   toast("Deleted");
 }
@@ -414,7 +414,7 @@ $("search").addEventListener("input", renderList);
 $("new-btn").addEventListener("click", () => select(""));
 $("form").addEventListener("submit", save);
 $("cancel-btn").addEventListener("click", closeEditor);
-$("delete-btn").addEventListener("click", remove);
+$("delete-btn").addEventListener("click", () => remove());
 $("duplicate-btn").addEventListener("click", () => select("", state.snippets.find((s) => s.id === selectedId)));
 $("f-content").addEventListener("input", updatePreview);
 $("f-rich-editor").addEventListener("input", updatePreview);
@@ -690,3 +690,77 @@ $("ai-key-remove").addEventListener("click", () => setAiKey("", "API key removed
 document.querySelectorAll("[data-key-page]").forEach((button) =>
   button.addEventListener("click", () => invoke("open_key_page", { provider: button.dataset.keyPage }).catch((e) => toast(e, true)))
 );
+
+// ---------- Settings sections ----------
+
+document.querySelectorAll(".settings-nav-item").forEach((item) =>
+  item.addEventListener("click", () => {
+    document.querySelectorAll(".settings-nav-item").forEach((other) => other.classList.toggle("active", other === item));
+    document.querySelectorAll(".settings-group").forEach((group) => {
+      group.hidden = group.dataset.group !== item.dataset.group;
+    });
+    $("settings-scroll").scrollTop = 0;
+  })
+);
+
+// ---------- Snippet right-click menu ----------
+
+const snippetMenu = $("snippet-menu");
+let menuSnippetId = null;
+
+function closeSnippetMenu() {
+  snippetMenu.hidden = true;
+  menuSnippetId = null;
+}
+
+$("list").addEventListener("contextmenu", (e) => {
+  const item = e.target.closest(".item[data-id]");
+  if (!item) return;
+  menuSnippetId = item.dataset.id;
+  snippetMenu.hidden = false;
+  // The menu key reports no pointer position, so open beside the row instead.
+  const row = item.getBoundingClientRect();
+  const x = e.clientX || row.left + 24;
+  const y = e.clientY || row.bottom;
+  snippetMenu.style.left = `${Math.min(x, window.innerWidth - snippetMenu.offsetWidth - 8)}px`;
+  snippetMenu.style.top = `${Math.min(y, window.innerHeight - snippetMenu.offsetHeight - 8)}px`;
+  snippetMenu.querySelector("button").focus();
+});
+
+snippetMenu.addEventListener("click", (e) => {
+  const action = e.target.closest("button")?.dataset.action;
+  const snippet = state.snippets.find((s) => s.id === menuSnippetId);
+  closeSnippetMenu();
+  if (!action || !snippet) return;
+  if (action === "delete") {
+    remove(snippet.id);
+    return;
+  }
+  if (action === "duplicate") {
+    select("", snippet);
+    return;
+  }
+  select(snippet.id);
+  if (action === "move") {
+    $("f-group").focus();
+    $("f-group").select();
+  }
+});
+
+snippetMenu.addEventListener("keydown", (e) => {
+  const buttons = [...snippetMenu.querySelectorAll("button")];
+  const at = buttons.indexOf(document.activeElement);
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    buttons[(at + (e.key === "ArrowDown" ? 1 : buttons.length - 1)) % buttons.length].focus();
+  } else if (e.key === "Escape" || e.key === "Tab") {
+    e.preventDefault();
+    closeSnippetMenu();
+  }
+});
+
+document.addEventListener("mousedown", (e) => {
+  if (!snippetMenu.hidden && !snippetMenu.contains(e.target)) closeSnippetMenu();
+});
+$("list").addEventListener("scroll", closeSnippetMenu);
+window.addEventListener("blur", closeSnippetMenu);

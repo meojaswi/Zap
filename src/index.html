@@ -125,8 +125,17 @@
     </section>
 
     <section class="view" id="view-settings">
-      <div class="settings">
+      <nav class="settings-nav" aria-label="Settings sections">
+        <button type="button" class="settings-nav-item active" data-group="system">System</button>
+        <button type="button" class="settings-nav-item" data-group="typing">Typing</button>
+        <button type="button" class="settings-nav-item" data-group="shortcuts">Shortcuts</button>
+        <button type="button" class="settings-nav-item" data-group="ai">AI</button>
+        <button type="button" class="settings-nav-item" data-group="updates">Updates</button>
+        <button type="button" class="settings-nav-item" data-group="privacy">Privacy &amp; data</button>
+      </nav>
+      <div class="settings" id="settings-scroll">
         <div class="settings-inner">
+          <div class="settings-group" data-group="system">
           <div class="card">
             <h3>Theme</h3>
             <p>System follows your Windows setting.</p>
@@ -138,25 +147,17 @@
           </div>
 
           <div class="card">
-            <h3>Search hotkey</h3>
-            <p>Opens the Zap search box from any app. Click the box and press the new combination.</p>
             <div class="card-row">
-              <input class="input hotkey-input" id="hotkey" readonly>
-              <button class="btn" id="hotkey-reset">Reset</button>
-            </div>
-            <div class="hint">Good choices: <kbd>Ctrl+Shift+Space</kbd>, <kbd>Alt+;</kbd>, <kbd>Pause</kbd>, <kbd>ScrollLock</kbd>, <kbd>F13</kbd>–<kbd>F24</kbd>.</div>
-          </div>
-
-          <div class="card">
-            <h3>Save selection hotkey</h3>
-            <p>Select text in any app and press this to turn it into a new snippet. Click the box and press the new combination.</p>
-            <div class="card-row">
-              <input class="input hotkey-input" id="save-hotkey" readonly>
-              <button class="btn" id="save-hotkey-reset">Reset</button>
-              <button class="btn" id="save-hotkey-off">Turn off</button>
+              <div style="flex:1">
+                <h3>Start with Windows</h3>
+                <p style="margin:0">Launch Zap quietly in the system tray when you sign in.</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="autostart"><span class="slider"></span></label>
             </div>
           </div>
+          </div>
 
+          <div class="settings-group" data-group="typing" hidden>
           <div class="card">
             <div class="card-row">
               <div style="flex:1">
@@ -183,17 +184,31 @@
             <textarea class="textarea" id="excluded" style="min-height:90px" spellcheck="false" placeholder="valorant.exe&#10;keepass.exe"></textarea>
             <div class="actions" style="margin-top:10px"><button class="btn" id="excluded-save">Save list</button></div>
           </div>
-
-          <div class="card">
-            <div class="card-row">
-              <div style="flex:1">
-                <h3>Start with Windows</h3>
-                <p style="margin:0">Launch Zap quietly in the system tray when you sign in.</p>
-              </div>
-              <label class="switch"><input type="checkbox" id="autostart"><span class="slider"></span></label>
-            </div>
           </div>
 
+          <div class="settings-group" data-group="shortcuts" hidden>
+          <div class="card">
+            <h3>Search hotkey</h3>
+            <p>Opens the Zap search box from any app. Click the box and press the new combination.</p>
+            <div class="card-row">
+              <input class="input hotkey-input" id="hotkey" readonly>
+              <button class="btn" id="hotkey-reset">Reset</button>
+            </div>
+            <div class="hint">Good choices: <kbd>Ctrl+Shift+Space</kbd>, <kbd>Alt+;</kbd>, <kbd>Pause</kbd>, <kbd>ScrollLock</kbd>, <kbd>F13</kbd>–<kbd>F24</kbd>.</div>
+          </div>
+
+          <div class="card">
+            <h3>Save selection hotkey</h3>
+            <p>Select text in any app and press this to turn it into a new snippet. Click the box and press the new combination.</p>
+            <div class="card-row">
+              <input class="input hotkey-input" id="save-hotkey" readonly>
+              <button class="btn" id="save-hotkey-reset">Reset</button>
+              <button class="btn" id="save-hotkey-off">Turn off</button>
+            </div>
+          </div>
+          </div>
+
+          <div class="settings-group" data-group="ai" hidden>
           <div class="card">
             <h3>AI generation</h3>
             <p>Write directions in a snippet's Text box, like "polite email asking for leave on Friday", and click the star in its corner. Only those directions are sent, from your PC straight to the provider you choose, and only when you click. Sensitive snippets are never sent. You pay your provider for what you use.</p>
@@ -231,7 +246,9 @@
               </div>
             </div>
           </div>
+          </div>
 
+          <div class="settings-group" data-group="updates" hidden>
           <div class="card">
             <div class="card-row">
               <div style="flex:1">
@@ -249,7 +266,9 @@
             </div>
             <div class="actions" style="margin-top:10px"><button class="btn" id="check-now">Check now</button></div>
           </div>
+          </div>
 
+          <div class="settings-group" data-group="privacy" hidden>
           <div class="card">
             <div class="card-row">
               <div style="flex:1">
@@ -299,11 +318,18 @@
               <li>Don't store passwords here. A password manager is the right place for those.</li>
             </ul>
           </div>
+          </div>
         </div>
       </div>
     </section>
   </div>
 
+  <div class="context-menu" id="snippet-menu" role="menu" hidden>
+    <button type="button" role="menuitem" data-action="edit">Edit</button>
+    <button type="button" role="menuitem" data-action="move">Move to group</button>
+    <button type="button" role="menuitem" data-action="duplicate">Duplicate</button>
+    <button type="button" role="menuitem" class="menu-danger" data-action="delete">Delete</button>
+  </div>
   <div class="toast" id="toast"></div>
   <script src="rich.js"></script>
   <script src="main.js"></script>

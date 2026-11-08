@@ -43,9 +43,13 @@ Starting triggers with `` ` `` keeps them from firing by accident, but some webs
 
 For those, set a **secondary trigger prefix** once in **Settings**, made of letters like `zz`. Every trigger that starts with a symbol then also works with the prefix in its place, so `` `email `` also works as `zzemail` and `` `today `` as `zztoday`. Triggers that already start with a letter work everywhere, so they stay as they are. You can change the prefix any time, or clear it to turn this off. You can also insert any snippet from the search popup.
 
+### Right-click menu
+
+Right-click a snippet in the list for **Edit**, **Move to group** (opens it with the Group box ready to change), **Duplicate** and **Delete**.
+
 ### Duplicating a snippet
 
-Open a snippet and click **Duplicate** to start a new one with the same text, group, formatting and Sensitive setting. Give it its own trigger and save. Usage stats start from zero.
+Open a snippet and click **Duplicate**, or use the right-click menu, to start a new one with the same text, group, formatting and Sensitive setting. Give it its own trigger and save. Usage stats start from zero.
 
 ### Groups
 
@@ -166,7 +170,7 @@ Typing takes longer than pasting, at about 50 characters a second, so keep your 
 
 ### AI generation
 
-Write directions in a snippet's **Text** box, like `polite email asking my manager for leave on Friday`, and click the **star** in the box's bottom-right corner. The AI's answer replaces your directions, and the undo arrow next to it brings them back. It works in the main editor and in the search box's new-snippet form, and the star only appears once you've chosen a provider and saved a key. Details that change each time, like a name, usually come back as fill-ins such as `{input:Name}`.
+Write directions in a snippet's **Text** box, like `polite email asking my manager for leave on Friday`, and click the **star** in the box's bottom-right corner. The AI's answer replaces your directions, and the undo arrow next to it brings them back. It works in the main editor and in the search box's new-snippet form, and the star only appears once you've chosen a provider and saved a key. Details that change each time, like a name, usually come back as fill-ins such as `{input:Name}`. It's only for writing messages: requests like solving a coding problem are turned down.
 
 To set it up, open **Settings → AI generation**, choose Claude, ChatGPT, Grok, Groq or Gemini, and paste an API key from that provider. Settings has a direct link to each provider's key page. Default models are filled in, and you can type a different one. You pay your provider directly; Zap doesn't charge for this or see your key.
 
