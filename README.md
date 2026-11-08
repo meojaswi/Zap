@@ -44,7 +44,7 @@ Give a snippet a **Group** in the editor, like `Work`, `College` or `Email`. The
 
 ### Adding snippets from the search box
 
-You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
+You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. Tick **Formatting** for bold, italic, underline, links and lists. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
 
 ### Starter snippets
 

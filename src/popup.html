@@ -27,8 +27,24 @@
         </div>
       </div>
       <div class="field add-text">
-        <label for="add-content">Text</label>
+        <div class="field-head">
+          <label for="add-content">Text</label>
+          <label class="inline-check" title="Bold, italic, links and lists for apps like Gmail, Outlook and Word"><input type="checkbox" id="add-rich"> Formatting</label>
+        </div>
+        <div class="rich-toolbar" id="add-rich-toolbar" hidden>
+          <button type="button" class="chip" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+          <button type="button" class="chip" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button type="button" class="chip" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+          <button type="button" class="chip" data-cmd="createLink" title="Link">Link</button>
+          <button type="button" class="chip" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+          <button type="button" class="chip" data-cmd="removeFormat" title="Remove formatting from the selection">Clear</button>
+        </div>
+        <div class="add-link" id="add-link-row" hidden>
+          <input class="input" id="add-link" placeholder="https://" autocomplete="off" spellcheck="false">
+          <button type="button" class="btn" id="add-link-ok">Add link</button>
+        </div>
         <textarea class="textarea" id="add-content" placeholder="The text this trigger becomes" spellcheck="false"></textarea>
+        <div class="textarea rich-editor" id="add-rich-editor" contenteditable="true" spellcheck="false" hidden></div>
       </div>
       <div class="form-error" id="add-error" hidden></div>
       <div class="actions">
@@ -47,6 +63,7 @@
       <span><kbd>Esc</kbd> back to search</span>
     </div>
   </div>
+  <script src="rich.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
