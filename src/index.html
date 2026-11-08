@@ -15,6 +15,7 @@
         <button class="tab" data-view="settings">Settings</button>
       </nav>
       <div class="spacer"></div>
+      <button class="update-pill" id="restart-update" title="The update is downloaded. Click to restart Zap with it." hidden>⟳ Restart to update</button>
       <span class="saved-total" id="saved-total" title="Estimated typing time Zap has saved you" hidden></span>
       <button class="status-pill" id="status" title="Pause or resume Zap"><span class="dot"></span><span id="status-text">Active</span></button>
     </header>
@@ -167,6 +168,13 @@
                 <p style="margin:0">You're on Zap <span id="app-version"></span>. Zap checks GitHub about once an hour and notifies you when a new version is ready. Nothing about you or your snippets is sent.</p>
               </div>
               <label class="switch"><input type="checkbox" id="check-updates"><span class="slider"></span></label>
+            </div>
+            <div class="card-row" style="margin-top:12px">
+              <div style="flex:1">
+                <h3>Install updates automatically</h3>
+                <p style="margin:0">Downloads new versions in the background and installs them when you're away from the keyboard, with no Zap window open. Zap restarts by itself in the tray.</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="auto-update"><span class="slider"></span></label>
             </div>
             <div class="actions" style="margin-top:10px"><button class="btn" id="check-now">Check now</button></div>
           </div>

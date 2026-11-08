@@ -26,7 +26,7 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 - **Usage stats**: see how often you use each snippet and roughly how much typing time Zap has saved you.
 - **Stays out of the way**: lives in the tray, starts with Windows, and pauses with a double-click on the tray icon.
 - **Import / export** snippets as JSON.
-- **Automatic updates**: Zap tells you when a new version is out and installs it in one click.
+- **Automatic updates**: new versions download and install themselves while you're away, with nothing to click.
 
 ## Using Zap
 
@@ -156,7 +156,9 @@ In the Zap window:
 
 ### Updates
 
-Zap checks GitHub for a new version when it starts and about once an hour. When one is out, you get a Windows notification and an **Install and restart** banner. You can also use **Check for updates** in the tray menu or **Settings → Updates → Check now**, and turn automatic checks off in Settings.
+Zap updates itself. It checks GitHub when it starts and about once an hour, and downloads a new version in the background. Once it's downloaded, a **⟳ Restart to update** button appears in Zap's header and the tray icon gets a green badge, so you can apply it right away. If you don't, Zap installs it by itself when it has just started or when you've been away from the keyboard and mouse for 3 minutes with no Zap window open, then restarts in the tray and a notification tells you the new version.
+
+Prefer to choose when? Turn off **Install updates automatically** in **Settings → Updates**. You'll then get a Windows notification and an **Install and restart** banner instead. **Check for updates** in the tray menu and **Check now** in Settings work either way, and updates are always signature-checked before installing.
 
 ### Anonymous user count
 

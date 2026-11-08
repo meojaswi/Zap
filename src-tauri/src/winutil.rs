@@ -1,13 +1,27 @@
 //! Small helpers around the foreground window.
 
+use std::mem::size_of;
 use std::path::Path;
 use std::ptr::null_mut;
+use std::time::Duration;
 
 use windows_sys::Win32::Foundation::{CloseHandle, HWND};
+use windows_sys::Win32::System::SystemInformation::GetTickCount;
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
 use windows_sys::Win32::System::Threading::{
     OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow};
+
+/// How long since the last keyboard or mouse input anywhere on the PC.
+pub fn idle_time() -> Duration {
+    let mut info = LASTINPUTINFO { cbSize: size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
+    if unsafe { GetLastInputInfo(&mut info) } == 0 {
+        return Duration::ZERO;
+    }
+    // Both are millisecond tick counts that wrap around about every 49 days.
+    Duration::from_millis(u64::from(unsafe { GetTickCount() }.wrapping_sub(info.dwTime)))
+}
 
 pub fn foreground_window() -> isize {
     unsafe { GetForegroundWindow() as isize }

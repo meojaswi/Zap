@@ -58,11 +58,13 @@ pub struct Settings {
     pub secondary_prefix: String,
     /// Send an anonymous daily check-in (random ID + version) so the makers can count active users.
     pub usage_ping: bool,
+    /// Download updates in the background and install them when the user is away.
+    pub auto_update: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new(), usage_ping: true }
+        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new(), usage_ping: true, auto_update: true }
     }
 }
 
@@ -75,6 +77,8 @@ pub struct Data {
     pub install_id: String,
     /// Local date of the last successful check-in, as YYYY-MM-DD.
     pub last_ping: Option<String>,
+    /// Version being installed automatically; on the next start Zap stays in the tray and says so.
+    pub quiet_restart: Option<String>,
 }
 
 pub struct Shared {
@@ -145,6 +149,7 @@ fn seed() -> Data {
         settings: Settings::default(),
         install_id: String::new(),
         last_ping: None,
+        quiet_restart: None,
     }
 }
 
@@ -243,6 +248,7 @@ mod tests {
         let settings: super::Settings = serde_json::from_str(r#"{"hotkey":"F13"}"#).unwrap();
         assert_eq!(settings.typing_wpm, 40);
         assert!(settings.keep_stats);
+        assert!(settings.auto_update);
     }
 
     #[test]

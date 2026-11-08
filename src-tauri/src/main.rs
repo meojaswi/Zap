@@ -59,8 +59,10 @@ struct FillPrompt {
 }
 
 const PAUSED_ICON: &[u8] = include_bytes!("../icons/tray-paused.png");
+const UPDATE_ICON: &[u8] = include_bytes!("../icons/tray-update.png");
 const TOOLTIP: &str = "Zap — type, zap, done";
 const PAUSED_TOOLTIP: &str = "Zap — paused";
+const UPDATE_TOOLTIP: &str = "Zap — restart to update";
 
 struct TrayState {
     pause: CheckMenuItem<Wry>,
@@ -77,6 +79,7 @@ struct AppData {
     hotkey_error: Option<String>,
     app_version: String,
     update_version: Option<String>,
+    update_ready: Option<String>,
 }
 
 fn show_main(app: &AppHandle) {
@@ -123,12 +126,22 @@ fn set_paused_inner(app: &AppHandle, paused: bool) {
     if let Some(tray) = app.try_state::<TrayState>() {
         let _ = tray.pause.set_checked(paused);
     }
-    if let Some(tray) = app.tray_by_id("zap") {
-        let icon = if paused { Image::from_bytes(PAUSED_ICON).ok() } else { app.default_window_icon().cloned() };
-        let _ = tray.set_icon(icon);
-        let _ = tray.set_tooltip(Some(if paused { PAUSED_TOOLTIP } else { TOOLTIP }));
-    }
+    refresh_tray(app);
     data_changed(app);
+}
+
+/// Sets the tray icon and tooltip for Zap's state; being paused matters most, then a ready update.
+pub(crate) fn refresh_tray(app: &AppHandle) {
+    let Some(tray) = app.tray_by_id("zap") else { return };
+    let (icon, tooltip) = if shared().paused.load(Ordering::Relaxed) {
+        (Image::from_bytes(PAUSED_ICON).ok(), PAUSED_TOOLTIP)
+    } else if updater::ready_version().is_some() {
+        (Image::from_bytes(UPDATE_ICON).ok(), UPDATE_TOOLTIP)
+    } else {
+        (app.default_window_icon().cloned(), TOOLTIP)
+    };
+    let _ = tray.set_icon(icon);
+    let _ = tray.set_tooltip(Some(tooltip));
 }
 
 /// Left click opens Zap, but only once the double-click time has passed without a second click,
@@ -173,6 +186,7 @@ fn get_data(app: AppHandle) -> AppData {
         hotkey_error: HOTKEY_ERROR.lock().unwrap().clone(),
         app_version: app.package_info().version.to_string(),
         update_version: updater::pending_version(),
+        update_ready: updater::ready_version(),
     }
 }
 
@@ -496,7 +510,7 @@ async fn import_snippets(app: AppHandle) -> Result<Option<ImportResult>, String>
 
 #[tauri::command]
 async fn check_for_updates(app: AppHandle) -> Result<Option<String>, String> {
-    updater::check(&app).await
+    updater::check(&app, true).await
 }
 
 #[tauri::command]
@@ -509,7 +523,7 @@ async fn tray_update(app: AppHandle) {
     let result = if updater::pending_version().is_some() {
         updater::install(&app).await.map(|_| None)
     } else {
-        updater::check(&app).await
+        updater::check(&app, true).await
     };
     let message = match result {
         Ok(None) => "You're on the latest version.".to_string(),
@@ -587,7 +601,8 @@ fn main() {
             updater::start(handle.clone());
             usage::start(handle.clone());
             let _ = APP.set(handle.clone());
-            if !std::env::args().any(|a| a == "--minimized") {
+            let updated_quietly = updater::finish_quiet_restart(&handle);
+            if !updated_quietly && !std::env::args().any(|a| a == "--minimized") {
                 show_main(&handle);
             }
             Ok(())
@@ -634,7 +649,13 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{export_json, store::Snippet, PAUSED_ICON};
+    use super::{export_json, store::Snippet, PAUSED_ICON, UPDATE_ICON};
+
+    #[test]
+    fn update_tray_icon_decodes() {
+        let icon = tauri::image::Image::from_bytes(UPDATE_ICON).unwrap();
+        assert_eq!((icon.width(), icon.height()), (64, 64));
+    }
 
     #[test]
     fn paused_tray_icon_decodes() {

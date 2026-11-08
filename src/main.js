@@ -98,6 +98,8 @@ function renderUsage() {
     : "Not used yet";
 }
 
+let restarting = false;
+
 function renderStatus() {
   $("status").classList.toggle("paused", state.paused);
   $("status-text").textContent = state.paused ? "Paused" : "Active";
@@ -108,7 +110,10 @@ function renderStatus() {
     ? `${state.hotkeyError}. Another app may be using it, so pick a different one in Settings.`
     : "";
   $("brand-version").textContent = state.appVersion;
-  $("update-banner").hidden = !state.updateVersion;
+  // Once it's downloaded, the header button replaces the "available" banner.
+  $("restart-update").hidden = !state.updateReady;
+  if (state.updateReady && !restarting) $("restart-update").title = `Zap ${state.updateReady} is downloaded. Click to restart with it.`;
+  $("update-banner").hidden = !state.updateVersion || Boolean(state.updateReady);
   $("update-text").textContent = `Zap ${state.updateVersion} is available.`;
 }
 
@@ -344,6 +349,8 @@ function renderSettings() {
   $("inline").checked = state.settings.inlineEnabled;
   $("autostart").checked = state.autostart;
   $("check-updates").checked = state.settings.checkUpdates;
+  $("auto-update").checked = state.settings.autoUpdate;
+  $("auto-update").disabled = !state.settings.checkUpdates;
   $("usage-ping").checked = state.settings.usagePing;
   $("app-version").textContent = state.appVersion;
   if (document.activeElement !== $("excluded")) $("excluded").value = state.settings.excludedApps.join("\n");
@@ -506,6 +513,10 @@ $("check-updates").addEventListener("change", (e) =>
   updateSettings({ checkUpdates: e.target.checked }, e.target.checked ? "Automatic update checks on" : "Automatic update checks off")
 );
 
+$("auto-update").addEventListener("change", (e) =>
+  updateSettings({ autoUpdate: e.target.checked }, e.target.checked ? "Updates will install automatically" : "Zap will ask before installing updates")
+);
+
 $("check-now").addEventListener("click", async () => {
   const button = $("check-now");
   button.disabled = true;
@@ -516,6 +527,21 @@ $("check-now").addEventListener("click", async () => {
     toast(`Couldn't check for updates: ${e}`, true);
   }
   button.disabled = false;
+});
+
+$("restart-update").addEventListener("click", async () => {
+  const button = $("restart-update");
+  restarting = true;
+  button.disabled = true;
+  button.textContent = "Restarting…";
+  try {
+    await invoke("install_update"); // Zap restarts when this succeeds
+  } catch (e) {
+    restarting = false;
+    toast(`Couldn't install the update: ${e}`, true);
+    button.disabled = false;
+    button.textContent = "⟳ Restart to update";
+  }
 });
 
 $("update-install").addEventListener("click", async () => {

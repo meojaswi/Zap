@@ -198,6 +198,21 @@ code { color: var(--muted); }
 
 .saved-total { color: var(--muted); font-size: 12px; white-space: nowrap; margin-right: var(--space-4); }
 .saved-total .bolt { color: var(--accent); }
+.update-pill {
+  margin-right: var(--space-4);
+  padding: 3px 10px;
+  border: 1px solid #22c55e;
+  border-radius: 999px;
+  background: none;
+  color: #22c55e;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.update-pill:hover:not(:disabled) { background: #22c55e; color: #0a0a0a; }
+.update-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.update-pill:disabled { opacity: 0.6; cursor: default; }
 .hint.usage { margin-top: var(--space-2); }
 .stats-totals { margin: var(--space-3) 0; }
 .stats-top { list-style: none; margin: 0; padding: 0; }
