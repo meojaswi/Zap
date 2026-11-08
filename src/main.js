@@ -632,3 +632,18 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 listen("data-changed", load);
 listen("main-reopened", () => showView("snippets"));
 load();
+
+// ---------- Theme ----------
+
+const themeButtons = document.querySelectorAll("#theme-choice button");
+
+function showTheme() {
+  const current = zapTheme.get();
+  themeButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.choice === current)));
+}
+
+themeButtons.forEach((b) => b.addEventListener("click", () => {
+  zapTheme.set(b.dataset.choice);
+  showTheme();
+}));
+showTheme();

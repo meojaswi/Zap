@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Zap</title>
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,7 +16,7 @@
         <button class="tab" data-view="settings">Settings</button>
       </nav>
       <div class="spacer"></div>
-      <button class="update-pill" id="restart-update" title="The update is downloaded. Click to restart Zap with it." hidden>⟳ Restart to update</button>
+      <button class="btn primary" id="restart-update" title="The update is downloaded. Click to restart Zap with it." hidden>⟳ Restart to update</button>
       <span class="saved-total" id="saved-total" title="Estimated typing time Zap has saved you" hidden></span>
       <button class="status-pill" id="status" title="Pause or resume Zap"><span class="dot"></span><span id="status-text">Active</span></button>
     </header>
@@ -38,8 +39,10 @@
       <main class="editor" id="editor">
         <div class="welcome" id="welcome">
           <div class="bolt">⚡</div>
-          <h2>pick a snippet, or create one</h2>
-          <p>Type a trigger like <code>`email</code> in any app and it expands instantly. Or press <kbd id="welcome-hotkey">Ctrl+Shift+Space</kbd> to search and paste.</p>
+          <div>
+            <h2>pick a snippet, or create one</h2>
+            <p>Type a trigger like <code>`email</code> in any app and it expands instantly. Or press <kbd id="welcome-hotkey">Ctrl+Shift+Space</kbd> to search and paste.</p>
+          </div>
         </div>
 
         <form class="editor-inner" id="form" hidden>
@@ -114,6 +117,16 @@
     <section class="view" id="view-settings">
       <div class="settings">
         <div class="settings-inner">
+          <div class="card">
+            <h3>Theme</h3>
+            <p>System follows your Windows setting.</p>
+            <div class="theme-choice" id="theme-choice">
+              <button type="button" class="btn" data-choice="system"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9"/><path d="M5 14h6"/></svg>System</button>
+              <button type="button" class="btn" data-choice="light"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M13 3l-1.4 1.4M4.4 11.6 3 13"/></svg>Light</button>
+              <button type="button" class="btn" data-choice="dark"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 9.8A6 6 0 0 1 6.2 2.5a6 6 0 1 0 7.3 7.3z"/></svg>Dark</button>
+            </div>
+          </div>
+
           <div class="card">
             <h3>Search hotkey</h3>
             <p>Opens the Zap search box from any app. Click the box and press the new combination.</p>
