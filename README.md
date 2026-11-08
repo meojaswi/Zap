@@ -17,12 +17,16 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 ## Features
 
 - **Inline expansion**: type a trigger like `` `addr `` in any app (browser, Slack, Word, your editor) and it's replaced instantly.
-- **Search popup**: press `Ctrl+Shift+Space` anywhere to search snippets by name, trigger or text, then press `Enter` to paste.
+- **Search popup**: press `Ctrl+Shift+Space` anywhere to search snippets by name, trigger or text, then press `Enter` to paste. You can add new snippets from it too, with formatting.
+- **Save a selection**: select text in any app and press `Ctrl+Alt+Shift+S` to turn it into a snippet.
+- **Undo an expansion**: fired a trigger by accident? Press `Backspace` straight away to get your trigger back.
+- **Snippets inside snippets**: reuse a signature or a greeting in other snippets with `{snippet:Name}`.
 - **Placeholders**: `{date}`, `{time}`, `{clipboard}` and more are filled in at the moment a snippet is inserted.
 - **Formatting**: bold, italic, underline, links and lists, pasted with their formatting into Gmail, Outlook, Word and similar apps.
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
 - **Groups**: sort snippets into groups like Work or College, shown as collapsible sections.
+- **Light and dark themes**: follow Windows, or choose one in Settings.
 - **Usage stats**: see how often you use each snippet and roughly how much typing time Zap has saved you.
 - **Stays out of the way**: lives in the tray, starts with Windows, and pauses with a double-click on the tray icon.
 - **Import / export** snippets as JSON.
@@ -44,19 +48,27 @@ Give a snippet a **Group** in the editor, like `Work`, `College` or `Email`. The
 
 ### Adding snippets from the search box
 
-You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. Tick **Formatting** for bold, italic, underline, links and lists. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
+You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. Tick **Formatting** for the same toolbar as the main editor: bold, italic, underline, links and lists. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
 
 ### Save a selection as a snippet
 
-Select text in any app and press `Ctrl+Alt+Shift+S`. The new-snippet form opens with that text in it, and your clipboard is put back afterwards. You can change or turn off this hotkey in Settings.
+Select text in any app and press `Ctrl+Alt+Shift+S`. The new-snippet form opens with that text in it, ready for a name and a trigger, and your clipboard text is put back afterwards.
+
+It saves plain text, so bold and links in the selection aren't kept; tick **Formatting** to add them. Zap copies the selection the normal way, so it may appear in Win+V clipboard history. If an image or files are on the clipboard, Zap leaves them alone and asks you to paste the text yourself. Change or turn off the hotkey under **Settings → Save selection hotkey**.
 
 ### Undo an expansion
 
-If a trigger fires by accident, press `Backspace` as your very next key, within 5 seconds. The expansion is removed and your trigger comes back. Snippets with fill-ins, lists or emoji, and text over 500 characters, can't be undone this way.
+If a trigger fires by accident, press `Backspace` as your very next key, within 5 seconds. The expansion is removed, your trigger comes back, and that use is taken off your stats.
+
+This works for triggers typed inline, not for snippets inserted from the search popup. Zap only offers it when it knows exactly how much to delete, so snippets with fill-ins, lists or paragraphs, emoji, or more than 500 characters are left alone and `Backspace` works as normal. Any other key or a click also ends the chance. Editors that auto-indent pasted lines can leave a few characters behind.
 
 ### Snippets inside snippets
 
-Use `{snippet:Name}` to include another snippet by its name or trigger, so changing your signature updates every template that uses it. Fill-ins and date placeholders in the included snippet work too. Including a Sensitive snippet makes the whole result Sensitive.
+Use `{snippet:Name}` to include another snippet, so changing your signature updates every template that uses it. For example, a snippet can end with `{snippet:Signature}`, or `` {snippet:`sig} `` using its trigger. The **{snippet:…}** chip in the editor adds one for you.
+
+Fill-ins and date placeholders in the included snippet work too, and included snippets can include others, up to 8 levels deep. If the name doesn't match any snippet, or snippets include each other in a loop, the `{snippet:…}` text is left as written so you can spot it; renaming a snippet needs the same change wherever it's included.
+
+Including a **Sensitive** snippet makes the whole result Sensitive: it's typed key by key, without formatting, and the editor preview shows only the included snippet's name.
 
 ### Starter snippets
 
@@ -83,6 +95,7 @@ Placeholders go inside a snippet's text; they aren't triggers on their own. For 
 | `{day}`       | `Sunday`                  |
 | `{clipboard}` | whatever you last copied  |
 | `{uuid}`      | a fresh random ID         |
+| `{snippet:Name}` | another snippet's text  |
 
 For other date and time formats, add format codes after a colon. Plain `{date}` and `{time}` keep the formats above.
 
@@ -134,6 +147,10 @@ Tick **Sensitive** in the editor for private details like an ID number. Normal s
 
 Typing takes longer than pasting, at about 50 characters a second, so keep your hands off the keyboard until it finishes. Every snippet is encrypted on disk either way, and exports include Sensitive snippets as plain text.
 
+### Theme
+
+Under **Settings → Theme**, choose **System**, **Light** or **Dark**. System follows your Windows setting, and every Zap window changes with it. The choice stays on your PC and isn't part of snippet exports.
+
 ### Usage stats
 
 Zap counts each time a snippet is inserted, whether from a trigger or the search popup:
@@ -170,6 +187,15 @@ In the Zap window:
 | `Ctrl+S` | Save snippet    |
 | `Ctrl+F` | Search the list |
 
+In the search popup:
+
+| Shortcut     | Action                                 |
+| ------------ | -------------------------------------- |
+| `Enter`      | Paste the selected snippet             |
+| `Ctrl+N`     | New snippet                            |
+| `Ctrl+Enter` | Save, in the new-snippet form          |
+| `Esc`        | Close, or go back from the form        |
+
 ### Updates
 
 Zap updates itself. It checks GitHub when it starts and about once an hour, and downloads a new version in the background. Once it's downloaded, a **⟳ Restart to update** button appears in Zap's header and the tray icon gets a green badge, so you can apply it right away. If you don't, Zap installs it by itself when it has just started or when you've been away from the keyboard and mouse for 3 minutes with no Zap window open, then restarts in the tray and a notification tells you the new version.
@@ -197,7 +223,7 @@ Inline expansion needs a keyboard hook, so Zap is built to keep as little as pos
 - Keystrokes are **never logged or saved**. Only the last few characters are held in memory to spot triggers.
 - **Usage stats stay on your PC.** Zap counts how often each snippet is used and the last date, to show the time it saves you. Nothing you type is recorded, stats are encrypted with your snippets and left out of exports, and you can turn them off or reset them in Settings.
 - **No account. Only an anonymous user count.** Zap connects to GitHub to check for updates, and once a day to our server so we can count active users. That check-in sends only a random ID made on your PC and the version number: nothing about you, your PC or your snippets, and the server keeps a count, not the ID. You can turn either off in **Settings**; turning off the user count deletes the ID.
-- **Signed updates.** Zap notifies you when a new version is out and refuses any update that isn't signed.
+- **Signed updates.** Zap updates itself by default and refuses any update that isn't signed.
 
 Don't store passwords in Zap. A password manager is the right place for those.
 
@@ -220,7 +246,9 @@ To keep details like ID numbers safe:
 
 After that, Zap keeps itself up to date, so you only need to download it once.
 
-> **"Windows protected your PC"?** The installer isn't code-signed yet. Click **More info → Run anyway**.
+> **Edge says the file "isn't commonly downloaded"?** The installer isn't code-signed yet, and each new version starts with no download history. In Edge's Downloads list, click **… → Keep → Show more → Keep anyway**.
+>
+> **"Windows protected your PC"?** Same reason. Click **More info → Run anyway**.
 
 Requires Windows 10 or 11 (64-bit).
 
@@ -238,7 +266,7 @@ npm run build   # build the installer → src-tauri/target/release/bundle/nsis/
 
 ## Releasing
 
-Change the version in `src-tauri/tauri.conf.json` and push to `main`. GitHub Actions builds, signs and publishes the release, and installed copies notify their users within about an hour.
+Change the version in `src-tauri/tauri.conf.json` and push to `main`. GitHub Actions builds, signs and publishes the release, and installed copies pick it up within about an hour.
 
 ### Counting users
 
