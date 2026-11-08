@@ -720,6 +720,7 @@ fn main() {
             hide_popup,
             set_ai_key,
             ai::generate_text,
+            ai::open_key_page,
             preview,
             export_snippets,
             import_snippets,

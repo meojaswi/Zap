@@ -62,7 +62,7 @@ pub struct Settings {
     pub auto_update: bool,
     /// Copies the selection into a new snippet from any app; empty turns it off.
     pub save_hotkey: String,
-    /// "claude", "chatgpt", "grok" or "gemini"; empty means AI generation is off.
+    /// "claude", "chatgpt", "grok", "groq" or "gemini"; empty means AI generation is off.
     pub ai_provider: String,
     /// Model to use; empty means the provider's default.
     pub ai_model: String,

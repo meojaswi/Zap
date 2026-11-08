@@ -317,6 +317,11 @@ async function reloadData() {
   const data = await invoke("get_data");
   snippets = data.snippets;
   secondaryPrefix = data.settings.secondaryPrefix;
+  const provider = data.settings.aiProvider;
+  const ready = Boolean(provider) && data.aiKeySaved.includes(provider);
+  $("add-generate").hidden = !ready;
+  $("add-text-box").classList.toggle("ai-on", ready);
+  if (!ready) generator.reset();
 }
 
 async function refresh() {

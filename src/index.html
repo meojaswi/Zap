@@ -69,8 +69,6 @@
             <div class="field-head">
               <label for="f-content">Text</label>
               <div class="field-tools">
-              <button type="button" class="chip" id="f-generate" title="Write what you want in the box, then click to replace it with AI-written text">Generate</button>
-              <button type="button" class="chip" id="f-generate-undo" title="Put your directions back" hidden>Undo</button>
               <label class="inline-check" title="Bold, italic, links and lists for apps like Gmail, Outlook and Word"><input type="checkbox" id="f-rich"> Formatting</label>
             </div>
             </div>
@@ -82,8 +80,14 @@
               <button type="button" class="chip" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
               <button type="button" class="chip" data-cmd="removeFormat" title="Remove formatting from the selection">Clear</button>
             </div>
-            <textarea class="textarea" id="f-content" placeholder="your.email@example.com" spellcheck="false"></textarea>
-            <div class="textarea rich-editor" id="f-rich-editor" contenteditable="true" spellcheck="false" hidden></div>
+            <div class="text-box" id="f-text-box">
+              <textarea class="textarea" id="f-content" placeholder="your.email@example.com" spellcheck="false"></textarea>
+              <div class="textarea rich-editor" id="f-rich-editor" contenteditable="true" spellcheck="false" hidden></div>
+              <div class="ai-tools">
+                <button type="button" class="ai-icon" id="f-generate-undo" title="Put your directions back" aria-label="Put your directions back" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 3 2.5 6l3 3"/><path d="M3 6h6.5a3.5 3.5 0 0 1 0 7H6"/></svg></button>
+                <button type="button" class="ai-icon ai-star" id="f-generate" title="Generate with AI from what you wrote here" aria-label="Generate with AI" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M7 1.5 8.6 6 13 7.6 8.6 9.2 7 13.7 5.4 9.2 1 7.6 5.4 6Z"/><path d="M13 10.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7Z"/></svg></button>
+              </div>
+            </div>
             <div class="hint usage" id="f-usage" hidden></div>
             <div class="hint" style="margin-bottom:6px">Click to insert a placeholder:</div>
             <div class="chips">
@@ -192,13 +196,14 @@
 
           <div class="card">
             <h3>AI generation</h3>
-            <p>Write directions in a snippet's Text box, like "polite email asking for leave on Friday", and click Generate. Only those directions are sent, from your PC straight to the provider you choose, and only when you click. Sensitive snippets are never sent. You pay your provider for what you use.</p>
+            <p>Write directions in a snippet's Text box, like "polite email asking for leave on Friday", and click the star in its corner. Only those directions are sent, from your PC straight to the provider you choose, and only when you click. Sensitive snippets are never sent. You pay your provider for what you use.</p>
             <div class="card-row">
               <select class="input ai-select" id="ai-provider" aria-label="AI provider">
                 <option value="">Off</option>
                 <option value="claude">Claude</option>
                 <option value="chatgpt">ChatGPT</option>
-                <option value="grok">Grok</option>
+                <option value="grok">Grok (xAI)</option>
+                <option value="groq">Groq</option>
                 <option value="gemini">Gemini</option>
               </select>
             </div>
@@ -213,6 +218,16 @@
                 <label for="ai-model">Model</label>
                 <input class="input" id="ai-model" autocomplete="off" spellcheck="false">
                 <div class="hint">Leave empty for the default shown. Providers rename models over time, so change this if one stops working.</div>
+              </div>
+            </div>
+            <div class="ai-links">
+              <div class="hint">Need an API key? Get one here:</div>
+              <div class="chips">
+                <button type="button" class="chip" data-key-page="claude">Claude ↗</button>
+                <button type="button" class="chip" data-key-page="chatgpt">ChatGPT ↗</button>
+                <button type="button" class="chip" data-key-page="grok">Grok ↗</button>
+                <button type="button" class="chip" data-key-page="groq">Groq ↗</button>
+                <button type="button" class="chip" data-key-page="gemini">Gemini ↗</button>
               </div>
             </div>
           </div>

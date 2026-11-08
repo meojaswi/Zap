@@ -23,16 +23,41 @@ Keep any placeholders in curly braces from the directions exactly as written.";
 /// Claude models that take `effort` and the server-side refusal fallback.
 const CLAUDE_CURRENT: [&str; 4] = ["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"];
 
-pub const PROVIDERS: [&str; 4] = ["claude", "chatgpt", "grok", "gemini"];
+pub const PROVIDERS: [&str; 5] = ["claude", "chatgpt", "grok", "groq", "gemini"];
 
 pub fn default_model(provider: &str) -> &'static str {
     match provider {
         "claude" => "claude-sonnet-5-5",
         "chatgpt" => "gpt-6.1-terra",
         "grok" => "grok-4.7",
+        "groq" => "llama-3.3-70b-versatile",
         "gemini" => "gemini-flash-latest",
         _ => "",
     }
+}
+
+/// Where each provider hands out API keys.
+fn key_page(provider: &str) -> Option<&'static str> {
+    match provider {
+        "claude" => Some("https://platform.claude.com/settings/keys"),
+        "chatgpt" => Some("https://platform.openai.com/api-keys"),
+        "grok" => Some("https://console.x.ai/"),
+        "groq" => Some("https://console.groq.com/keys"),
+        "gemini" => Some("https://aistudio.google.com/apikey"),
+        _ => None,
+    }
+}
+
+/// Opens a provider's API key page in the default browser. Takes a provider, not a URL, so the
+/// page can only ever open these addresses.
+#[tauri::command]
+pub fn open_key_page(provider: String) -> Result<(), String> {
+    let url = key_page(&provider).ok_or_else(|| "Unknown AI provider".to_string())?;
+    std::process::Command::new("rundll32")
+        .args(["url.dll,FileProtocolHandler", url])
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("Couldn't open your browser: {e}"))
 }
 
 fn display_name(provider: &str) -> &'static str {
@@ -40,6 +65,7 @@ fn display_name(provider: &str) -> &'static str {
         "claude" => "Claude",
         "chatgpt" => "ChatGPT",
         "grok" => "Grok",
+        "groq" => "Groq",
         "gemini" => "Gemini",
         _ => "AI",
     }
@@ -52,8 +78,9 @@ struct Request {
 }
 
 fn build_request(provider: &str, model: &str, key: &str, directions: &str) -> Result<Request, String> {
-    // The model name goes into Gemini's URL, and nothing needs more than these characters.
-    if model.is_empty() || !model.chars().all(|c| c.is_ascii_alphanumeric() || "-._".contains(c)) {
+    // The model name goes into Gemini's URL, so no slashes there; Groq's names can have one.
+    let allowed = if provider == "gemini" { "-._" } else { "-._/" };
+    if model.is_empty() || !model.chars().all(|c| c.is_ascii_alphanumeric() || allowed.contains(c)) {
         return Err("That model name isn't valid. Check it in Settings → AI generation.".to_string());
     }
     let openai_style = |url: &str| Request {
@@ -83,6 +110,7 @@ fn build_request(provider: &str, model: &str, key: &str, directions: &str) -> Re
         }
         "chatgpt" => openai_style("https://api.openai.com/v1/chat/completions"),
         "grok" => openai_style("https://api.x.ai/v1/chat/completions"),
+        "groq" => openai_style("https://api.groq.com/openai/v1/chat/completions"),
         "gemini" => Request {
             url: format!("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"),
             headers: vec![("x-goog-api-key", key.to_string())],
@@ -190,7 +218,15 @@ pub async fn generate_text(directions: String) -> Result<String, String> {
 mod tests {
     use serde_json::json;
 
-    use super::{api_error, build_request, default_model, extract_text, PROVIDERS};
+    use super::{api_error, build_request, default_model, extract_text, key_page, PROVIDERS};
+
+    #[test]
+    fn every_provider_has_a_secure_key_page() {
+        for provider in PROVIDERS {
+            assert!(key_page(provider).unwrap().starts_with("https://"));
+        }
+        assert_eq!(key_page("https://example.com"), None);
+    }
 
     #[test]
     fn every_provider_has_a_default_model_and_builds_a_request() {
@@ -214,6 +250,13 @@ mod tests {
         let other = build_request("claude", "claude-haiku-5-5", "k", "x").unwrap();
         assert!(other.body.get("fallbacks").is_none());
         assert!(!other.headers.iter().any(|(n, _)| *n == "anthropic-beta"));
+    }
+
+    #[test]
+    fn groq_model_names_can_have_a_slash() {
+        let request = build_request("groq", "openai/gpt-oss-120b", "k", "x").unwrap();
+        assert_eq!(request.url, "https://api.groq.com/openai/v1/chat/completions");
+        assert_eq!(extract_text("groq", &json!({ "choices": [{ "message": { "content": "Hi" } }] })).unwrap(), "Hi");
     }
 
     #[test]

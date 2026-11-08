@@ -643,12 +643,17 @@ const generator = wireGenerate({
     else $("f-content").value = text;
     updatePreview();
   },
-  blocked: () => ($("f-sensitive").checked ? "Sensitive snippets are never sent to AI. Untick Sensitive to use Generate." : ""),
+  blocked: () => ($("f-sensitive").checked ? "Sensitive snippets are never sent to AI. Untick Sensitive to use it." : ""),
   showError: (e) => toast(e, true),
 });
 
 function renderAi() {
   const provider = state.settings.aiProvider || "";
+  // The star only appears once AI can actually run.
+  const ready = Boolean(provider) && state.aiKeySaved.includes(provider);
+  $("f-generate").hidden = !ready;
+  $("f-text-box").classList.toggle("ai-on", ready);
+  if (!ready) generator.reset();
   $("ai-provider").value = provider;
   $("ai-details").hidden = !provider;
   if (!provider) return;
@@ -681,3 +686,7 @@ $("ai-key-save").addEventListener("click", () => {
   setAiKey(key, "API key saved");
 });
 $("ai-key-remove").addEventListener("click", () => setAiKey("", "API key removed"));
+
+document.querySelectorAll("[data-key-page]").forEach((button) =>
+  button.addEventListener("click", () => invoke("open_key_page", { provider: button.dataset.keyPage }).catch((e) => toast(e, true)))
+);

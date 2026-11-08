@@ -31,8 +31,6 @@
         <div class="field-head">
           <label for="add-content">Text</label>
           <div class="field-tools">
-            <button type="button" class="chip" id="add-generate" title="Write what you want in the box, then click to replace it with AI-written text">Generate</button>
-            <button type="button" class="chip" id="add-generate-undo" title="Put your directions back" hidden>Undo</button>
             <label class="inline-check" title="Bold, italic, links and lists for apps like Gmail, Outlook and Word"><input type="checkbox" id="add-rich"> Formatting</label>
           </div>
         </div>
@@ -48,8 +46,14 @@
           <input class="input" id="add-link" placeholder="https://" autocomplete="off" spellcheck="false">
           <button type="button" class="btn" id="add-link-ok">Add link</button>
         </div>
-        <textarea class="textarea" id="add-content" placeholder="The text this trigger becomes" spellcheck="false"></textarea>
-        <div class="textarea rich-editor" id="add-rich-editor" contenteditable="true" spellcheck="false" hidden></div>
+        <div class="text-box" id="add-text-box">
+          <textarea class="textarea" id="add-content" placeholder="The text this trigger becomes" spellcheck="false"></textarea>
+          <div class="textarea rich-editor" id="add-rich-editor" contenteditable="true" spellcheck="false" hidden></div>
+          <div class="ai-tools">
+            <button type="button" class="ai-icon" id="add-generate-undo" title="Put your directions back" aria-label="Put your directions back" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 3 2.5 6l3 3"/><path d="M3 6h6.5a3.5 3.5 0 0 1 0 7H6"/></svg></button>
+            <button type="button" class="ai-icon ai-star" id="add-generate" title="Generate with AI from what you wrote here" aria-label="Generate with AI" hidden><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M7 1.5 8.6 6 13 7.6 8.6 9.2 7 13.7 5.4 9.2 1 7.6 5.4 6Z"/><path d="M13 10.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7Z"/></svg></button>
+          </div>
+        </div>
       </div>
       <div class="form-error" id="add-error" hidden></div>
       <div class="actions">

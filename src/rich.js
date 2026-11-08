@@ -49,7 +49,6 @@ function triggerAdvice(trigger, prefix) {
 /** Connects a Generate button: the text box's directions go to the AI and its answer replaces them. */
 function wireGenerate({ button, undo, fields, getText, setText, blocked, showError }) {
   let last = null;
-  const label = button.textContent;
   const reset = () => {
     last = null;
     undo.hidden = true;
@@ -60,7 +59,7 @@ function wireGenerate({ button, undo, fields, getText, setText, blocked, showErr
     if (stop) return showError(stop);
     const directions = getText();
     button.disabled = true;
-    button.textContent = "Generating\u2026";
+    button.classList.add("busy");
     try {
       const text = await window.__TAURI__.core.invoke("generate_text", { directions });
       // The user may have moved on while it was writing; don't overwrite what's there now.
@@ -73,7 +72,7 @@ function wireGenerate({ button, undo, fields, getText, setText, blocked, showErr
       showError(e);
     } finally {
       button.disabled = false;
-      button.textContent = label;
+      button.classList.remove("busy");
     }
   });
   undo.addEventListener("click", () => {

@@ -26,7 +26,7 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
 - **Groups**: sort snippets into groups like Work or College, shown as collapsible sections.
-- **AI generation**: describe an email or message and let Claude, ChatGPT, Grok or Gemini write it, with your own API key.
+- **AI generation**: describe an email or message and let Claude, ChatGPT, Grok, Groq or Gemini write it, with your own API key.
 - **Light and dark themes**: follow Windows, or choose one in Settings.
 - **Usage stats**: see how often you use each snippet and roughly how much typing time Zap has saved you.
 - **Stays out of the way**: lives in the tray, starts with Windows, and pauses with a double-click on the tray icon.
@@ -166,11 +166,11 @@ Typing takes longer than pasting, at about 50 characters a second, so keep your 
 
 ### AI generation
 
-Write directions in a snippet's **Text** box, like `polite email asking my manager for leave on Friday`, and click **Generate**. The AI's answer replaces your directions, and **Undo** brings them back. It works in the main editor and in the search box's new-snippet form. Details that change each time, like a name, usually come back as fill-ins such as `{input:Name}`.
+Write directions in a snippet's **Text** box, like `polite email asking my manager for leave on Friday`, and click the **star** in the box's bottom-right corner. The AI's answer replaces your directions, and the undo arrow next to it brings them back. It works in the main editor and in the search box's new-snippet form, and the star only appears once you've chosen a provider and saved a key. Details that change each time, like a name, usually come back as fill-ins such as `{input:Name}`.
 
-To set it up, open **Settings → AI generation**, choose Claude, ChatGPT, Grok or Gemini, and paste an API key from that provider. Default models are filled in, and you can type a different one. You pay your provider directly; Zap doesn't charge for this or see your key.
+To set it up, open **Settings → AI generation**, choose Claude, ChatGPT, Grok, Groq or Gemini, and paste an API key from that provider. Settings has a direct link to each provider's key page. Default models are filled in, and you can type a different one. You pay your provider directly; Zap doesn't charge for this or see your key.
 
-It's off until you set it up. Only the directions you wrote are sent, only when you click **Generate**, and straight from your PC to your provider. Sensitive snippets are never sent.
+It's off until you set it up. Only the directions you wrote are sent, only when you click the star, and straight from your PC to your provider. Sensitive snippets are never sent.
 
 ### Theme
 
@@ -248,7 +248,7 @@ Inline expansion needs a keyboard hook, so Zap is built to keep as little as pos
 - Keystrokes are **never logged or saved**. Only the last few characters are held in memory to spot triggers.
 - **Usage stats stay on your PC.** Zap counts how often each snippet is used and the last date, to show the time it saves you. Nothing you type is recorded, stats are encrypted with your snippets and left out of exports, and you can turn them off or reset them in Settings.
 - **No account. Only an anonymous user count.** Zap connects to GitHub to check for updates, and once a day to our server so we can count active users. That check-in sends only a random ID made on your PC and the version number: nothing about you, your PC or your snippets, and the server keeps a count, not the ID. You can turn either off in **Settings**; turning off the user count deletes the ID.
-- **AI is opt-in.** If you add an API key, it's encrypted with your snippets and left out of exports. Clicking **Generate** sends only that snippet's directions to the provider you chose, under that provider's terms.
+- **AI is opt-in.** If you add an API key, it's encrypted with your snippets and left out of exports. Clicking the star sends only that snippet's directions to the provider you chose, under that provider's terms.
 - **Signed updates.** Zap updates itself by default and refuses any update that isn't signed.
 
 Don't store passwords in Zap. A password manager is the right place for those.
