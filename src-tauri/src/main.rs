@@ -21,10 +21,10 @@ use serde::{Deserialize, Serialize};
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::image::Image;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Emitter, Manager, WindowEvent, Wry};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindow, WindowEvent, Wry};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_dialog::DialogExt;
-use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use tauri_plugin_notification::NotificationExt;
 
 use store::{normalize_app, shared, Settings, Snippet};
@@ -32,6 +32,8 @@ use store::{normalize_app, shared, Settings, Snippet};
 /// The window that was focused before the popup opened; the snippet gets pasted back into it.
 static TARGET_WINDOW: AtomicIsize = AtomicIsize::new(0);
 static HOTKEY_ERROR: Mutex<Option<String>> = Mutex::new(None);
+/// Id of the save-selection hotkey; any other hotkey is the search box's.
+static SAVE_HOTKEY_ID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 /// Lets code without an AppHandle (like expand::deliver) tell the windows that data changed.
 static APP: OnceLock<AppHandle> = OnceLock::new();
 /// Bumped on every tray left click, so a pending single click can tell a double click followed it.
@@ -69,6 +71,13 @@ struct TrayState {
     update: MenuItem<Wry>,
 }
 
+/// What the save-selection hotkey hands the search box's new-snippet form.
+#[derive(Serialize, Clone)]
+struct SelectionPrompt {
+    text: Option<String>,
+    error: Option<String>,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AppData {
@@ -103,21 +112,50 @@ fn toggle_popup(app: &AppHandle) {
     if shared().paused.load(Ordering::Relaxed) {
         return;
     }
+    show_popup(&popup, "popup-shown", ());
+}
+
+fn show_popup(popup: &WebviewWindow, event: &str, payload: impl Serialize + Clone) {
     TARGET_WINDOW.store(winutil::foreground_window(), Ordering::SeqCst);
     let _ = popup.center();
     let _ = popup.show();
     let _ = popup.set_focus();
-    let _ = popup.emit("popup-shown", ());
+    let _ = popup.emit(event, payload);
+}
+
+/// Copies the selection in the focused app, then opens the new-snippet form with it.
+fn save_selection(app: &AppHandle) {
+    let Some(popup) = app.get_webview_window("popup") else { return };
+    if popup.is_visible().unwrap_or(false) || shared().paused.load(Ordering::Relaxed) {
+        return;
+    }
+    let prompt = match expand::copy_selection() {
+        Ok(text) => SelectionPrompt { text: Some(text), error: None },
+        Err(error) => SelectionPrompt { text: None, error: Some(error) },
+    };
+    show_popup(&popup, "popup-new-from-selection", prompt);
 }
 
 fn data_changed(app: &AppHandle) {
     let _ = app.emit("data-changed", ());
 }
 
-fn register_hotkey(app: &AppHandle, hotkey: &str) -> Result<(), String> {
+fn register_hotkeys(app: &AppHandle, search: &str, save: &str) -> Result<(), String> {
     let shortcuts = app.global_shortcut();
     let _ = shortcuts.unregister_all();
-    shortcuts.register(hotkey).map_err(|e| format!("Couldn't use {hotkey} as the hotkey: {e}"))
+    SAVE_HOTKEY_ID.store(0, Ordering::SeqCst);
+    shortcuts.register(search).map_err(|e| format!("Couldn't use {search} as the hotkey: {e}"))?;
+    if save.is_empty() {
+        return Ok(());
+    }
+    let parsed: Shortcut = save.parse().map_err(|e| format!("Couldn't use {save} as the hotkey: {e}"))?;
+    let id = parsed.id();
+    if search.parse::<Shortcut>().is_ok_and(|s| s.id() == id) {
+        return Err(format!("{save} is already the search hotkey"));
+    }
+    shortcuts.register(parsed).map_err(|e| format!("Couldn't use {save} as the hotkey: {e}"))?;
+    SAVE_HOTKEY_ID.store(id, Ordering::SeqCst);
+    Ok(())
 }
 
 fn set_paused_inner(app: &AppHandle, paused: bool) {
@@ -229,15 +267,29 @@ fn keep_stats(from: &Snippet, to: &mut Snippet) {
 
 /// Counts one use of a snippet for the stats, then saves and refreshes the windows.
 pub(crate) fn record_use(id: &str, chars_saved: usize) {
+    change_stats(id, |snippet| {
+        snippet.uses += 1;
+        snippet.chars_saved += chars_saved as u64;
+        snippet.last_used = Some(chrono::Local::now().format("%Y-%m-%d").to_string());
+    });
+}
+
+/// Takes back a use the user undid, so accidental expansions don't count as time saved.
+pub(crate) fn record_undo(id: &str, chars_saved: usize) {
+    change_stats(id, |snippet| {
+        snippet.uses = snippet.uses.saturating_sub(1);
+        snippet.chars_saved = snippet.chars_saved.saturating_sub(chars_saved as u64);
+    });
+}
+
+fn change_stats(id: &str, change: impl FnOnce(&mut Snippet)) {
     {
         let mut data = shared().data.write().unwrap();
         if !data.settings.keep_stats {
             return;
         }
         let Some(snippet) = data.snippets.iter_mut().find(|s| s.id == id) else { return };
-        snippet.uses += 1;
-        snippet.chars_saved += chars_saved as u64;
-        snippet.last_used = Some(chrono::Local::now().format("%Y-%m-%d").to_string());
+        change(snippet);
     }
     if let Err(e) = shared().save() {
         eprintln!("Zap: couldn't save stats: {e}");
@@ -266,6 +318,7 @@ fn delete_snippet(app: AppHandle, id: String) -> Result<(), String> {
 #[tauri::command]
 fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String> {
     settings.hotkey = settings.hotkey.trim().to_string();
+    settings.save_hotkey = settings.save_hotkey.trim().to_string();
     settings.typing_wpm = settings.typing_wpm.clamp(5, 300);
     settings.secondary_prefix = settings.secondary_prefix.trim().to_string();
     store::validate_prefix(&shared().data.read().unwrap().snippets, &settings.secondary_prefix)?;
@@ -277,9 +330,9 @@ fn update_settings(app: AppHandle, mut settings: Settings) -> Result<(), String>
         .collect();
 
     let old = shared().data.read().unwrap().settings.clone();
-    if settings.hotkey != old.hotkey || HOTKEY_ERROR.lock().unwrap().is_some() {
-        if let Err(e) = register_hotkey(&app, &settings.hotkey) {
-            let _ = register_hotkey(&app, &old.hotkey);
+    if settings.hotkey != old.hotkey || settings.save_hotkey != old.save_hotkey || HOTKEY_ERROR.lock().unwrap().is_some() {
+        if let Err(e) = register_hotkeys(&app, &settings.hotkey, &settings.save_hotkey) {
+            let _ = register_hotkeys(&app, &old.hotkey, &old.save_hotkey);
             return Err(e);
         }
         *HOTKEY_ERROR.lock().unwrap() = None;
@@ -311,15 +364,11 @@ fn set_paused(app: AppHandle, paused: bool) {
 
 #[tauri::command]
 fn insert_snippet(app: AppHandle, id: String) -> Result<(), String> {
-    let snippet = shared()
-        .data
-        .read()
-        .unwrap()
-        .snippets
-        .iter()
-        .find(|s| s.id == id)
-        .cloned()
-        .ok_or_else(|| "Snippet not found".to_string())?;
+    let snippet = {
+        let data = shared().data.read().unwrap();
+        let found = data.snippets.iter().find(|s| s.id == id).ok_or_else(|| "Snippet not found".to_string())?;
+        expand::with_nested(found, &data.snippets)
+    };
     if let Some(popup) = app.get_webview_window("popup") {
         let _ = popup.hide();
     }
@@ -366,7 +415,9 @@ fn finish_fill(app: &AppHandle, then: impl FnOnce(FillRequest) + Send + 'static)
 
 #[tauri::command]
 fn fill_submit(app: AppHandle, values: HashMap<String, String>) {
-    finish_fill(&app, move |request| expand::deliver_filled(&request.snippet, request.backspaces, &values));
+    finish_fill(&app, move |request| {
+        expand::deliver_filled(&request.snippet, request.backspaces, &values);
+    });
 }
 
 #[tauri::command]
@@ -393,6 +444,7 @@ fn hide_popup(app: AppHandle) {
 #[tauri::command]
 fn preview(content: String) -> String {
     // Fill-ins show as [Label], since their values are only known when the snippet is used.
+    let content = expand::nested_for_preview(&content, &shared().data.read().unwrap().snippets);
     let shown = expand::input_labels(&content).into_iter().map(|l| (l.clone(), format!("[{l}]"))).collect();
     expand::fill_inputs(&expand::render(&content), &shown)
 }
@@ -579,8 +631,14 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, _shortcut, event| {
-                    if event.state() == ShortcutState::Pressed {
+                .with_handler(|app, shortcut, event| {
+                    if event.state() != ShortcutState::Pressed {
+                        return;
+                    }
+                    if shortcut.id() == SAVE_HOTKEY_ID.load(Ordering::SeqCst) {
+                        let app = app.clone();
+                        thread::spawn(move || save_selection(&app));
+                    } else {
                         toggle_popup(app);
                     }
                 })
@@ -593,7 +651,7 @@ fn main() {
         .setup(|app| {
             let handle = app.handle().clone();
             let settings = shared().data.read().unwrap().settings.clone();
-            if let Err(e) = register_hotkey(&handle, &settings.hotkey) {
+            if let Err(e) = register_hotkeys(&handle, &settings.hotkey, &settings.save_hotkey) {
                 *HOTKEY_ERROR.lock().unwrap() = Some(e);
             }
             hook::set_enabled(settings.inline_enabled);

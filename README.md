@@ -46,6 +46,18 @@ Give a snippet a **Group** in the editor, like `Work`, `College` or `Email`. The
 
 You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. Tick **Formatting** for bold, italic, underline, links and lists. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
 
+### Save a selection as a snippet
+
+Select text in any app and press `Ctrl+Alt+Shift+S`. The new-snippet form opens with that text in it, and your clipboard is put back afterwards. You can change or turn off this hotkey in Settings.
+
+### Undo an expansion
+
+If a trigger fires by accident, press `Backspace` as your very next key, within 5 seconds. The expansion is removed and your trigger comes back. Snippets with fill-ins, lists or emoji, and text over 500 characters, can't be undone this way.
+
+### Snippets inside snippets
+
+Use `{snippet:Name}` to include another snippet by its name or trigger, so changing your signature updates every template that uses it. Fill-ins and date placeholders in the included snippet work too. Including a Sensitive snippet makes the whole result Sensitive.
+
 ### Starter snippets
 
 New installs come with these, so you can try Zap straight away. Edit or delete them as you like.

@@ -60,11 +60,13 @@ pub struct Settings {
     pub usage_ping: bool,
     /// Download updates in the background and install them when the user is away.
     pub auto_update: bool,
+    /// Copies the selection into a new snippet from any app; empty turns it off.
+    pub save_hotkey: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new(), usage_ping: true, auto_update: true }
+        Self { hotkey: "Ctrl+Shift+Space".into(), inline_enabled: true, excluded_apps: Vec::new(), check_updates: true, typing_wpm: 40, keep_stats: true, secondary_prefix: String::new(), usage_ping: true, auto_update: true, save_hotkey: "Ctrl+Alt+Shift+S".into() }
     }
 }
 

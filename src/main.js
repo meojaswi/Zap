@@ -3,6 +3,7 @@ const { listen } = window.__TAURI__.event;
 
 const $ = (id) => document.getElementById(id);
 const DEFAULT_HOTKEY = "Ctrl+Shift+Space";
+const DEFAULT_SAVE_HOTKEY = "Ctrl+Alt+Shift+S";
 
 let state = { snippets: [], settings: {}, autostart: false, paused: false, hotkeyError: null };
 let selectedId = null; // "" while creating a new snippet
@@ -312,6 +313,7 @@ function renderSecondary() {
 
 function renderSettings() {
   if (!$("hotkey").classList.contains("recording")) $("hotkey").value = state.settings.hotkey;
+  if (!$("save-hotkey").classList.contains("recording")) $("save-hotkey").value = state.settings.saveHotkey || "Off";
   $("inline").checked = state.settings.inlineEnabled;
   $("autostart").checked = state.autostart;
   $("check-updates").checked = state.settings.checkUpdates;
@@ -337,6 +339,8 @@ const MODIFIER_CODES = ["ControlLeft", "ControlRight", "ShiftLeft", "ShiftRight"
 // Keys that are fine as a hotkey on their own because nothing types with them.
 const SOLO_KEYS = /^(F(1[3-9]|2[0-4])|Pause|ScrollLock|Insert)$/;
 
+let recordingField = "hotkey";
+
 function readableKey(code) {
   return code.replace(/^Key/, "").replace(/^Digit/, "");
 }
@@ -359,21 +363,23 @@ function recordHotkey(event) {
     return;
   }
   const hotkey = [...mods, key].join("+");
+  const setting = recordingField === "save-hotkey" ? "saveHotkey" : "hotkey";
   stopRecording();
-  updateSettings({ hotkey }, `Hotkey set to ${hotkey}`);
+  updateSettings({ [setting]: hotkey }, `Hotkey set to ${hotkey}`);
 }
 
-function startRecording() {
-  const input = $("hotkey");
+function startRecording(field) {
+  recordingField = field;
+  const input = $(field);
   input.classList.add("recording");
   input.value = "Press keys… (Esc to cancel)";
   window.addEventListener("keydown", recordHotkey, true);
 }
 
 function stopRecording() {
-  $("hotkey").classList.remove("recording");
+  $(recordingField).classList.remove("recording");
   window.removeEventListener("keydown", recordHotkey, true);
-  $("hotkey").blur();
+  $(recordingField).blur();
   renderSettings();
 }
 
@@ -454,8 +460,12 @@ $("status").addEventListener("click", async () => {
   await load();
 });
 
-$("hotkey").addEventListener("click", startRecording);
-$("hotkey").addEventListener("blur", () => $("hotkey").classList.contains("recording") && stopRecording());
+for (const field of ["hotkey", "save-hotkey"]) {
+  $(field).addEventListener("click", () => startRecording(field));
+  $(field).addEventListener("blur", () => $(field).classList.contains("recording") && stopRecording());
+}
+$("save-hotkey-reset").addEventListener("click", () => updateSettings({ saveHotkey: DEFAULT_SAVE_HOTKEY }, `Hotkey reset to ${DEFAULT_SAVE_HOTKEY}`));
+$("save-hotkey-off").addEventListener("click", () => updateSettings({ saveHotkey: "" }, "Save selection hotkey off"));
 $("hotkey-reset").addEventListener("click", () => updateSettings({ hotkey: DEFAULT_HOTKEY }, `Hotkey reset to ${DEFAULT_HOTKEY}`));
 
 $("inline").addEventListener("change", (e) =>

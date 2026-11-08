@@ -6,9 +6,10 @@
 
 use std::mem::zeroed;
 use std::ptr::{null, null_mut};
-use std::sync::atomic::{AtomicIsize, Ordering};
+use std::sync::atomic::{AtomicIsize, AtomicU64, Ordering};
 use std::sync::{mpsc, Mutex};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use windows_sys::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
@@ -33,6 +34,36 @@ static BUFFER: Mutex<String> = Mutex::new(String::new());
 /// Window the buffered keys were typed into; typing into a different window starts over.
 static BUFFER_WINDOW: AtomicIsize = AtomicIsize::new(0);
 
+/// The expansion Backspace would undo. Only the trigger is kept, never the text around it.
+struct Undo {
+    window: isize,
+    snippet_id: String,
+    trigger: String,
+    chars: usize,
+    saved: usize,
+    at: Instant,
+}
+
+static UNDO: Mutex<Option<Undo>> = Mutex::new(None);
+/// Bumped by every real key or click, so an expansion can tell the user did something while it ran.
+static ACTIVITY: AtomicU64 = AtomicU64::new(0);
+/// Backspace much later is an ordinary correction, not second thoughts about the expansion.
+const UNDO_WINDOW: Duration = Duration::from_secs(5);
+
+/// Only the very next key can undo, so any key or click ends the chance.
+fn take_undo() -> Option<Undo> {
+    let mut undo = UNDO.lock().unwrap();
+    ACTIVITY.fetch_add(1, Ordering::Relaxed);
+    undo.take()
+}
+
+fn offer_undo(activity: u64, undo: Undo) {
+    let mut slot = UNDO.lock().unwrap();
+    if ACTIVITY.load(Ordering::Relaxed) == activity {
+        *slot = Some(undo);
+    }
+}
+
 pub fn set_enabled(enabled: bool) {
     let mut thread_id = HOOK_THREAD.lock().unwrap();
     match (enabled, *thread_id) {
@@ -43,6 +74,7 @@ pub fn set_enabled(enabled: bool) {
             }
             *thread_id = None;
             clear_buffer();
+            take_undo();
         }
         _ => {}
     }
@@ -93,7 +125,10 @@ unsafe extern "system" fn mouse_proc(code: i32, wparam: WPARAM, lparam: LPARAM) 
     if code == HC_ACTION as i32 {
         match wparam as u32 {
             WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONDOWN | WM_NCLBUTTONDOWN
-            | WM_NCRBUTTONDOWN | WM_NCMBUTTONDOWN | WM_NCXBUTTONDOWN => clear_buffer(),
+            | WM_NCRBUTTONDOWN | WM_NCMBUTTONDOWN | WM_NCXBUTTONDOWN => {
+                clear_buffer();
+                take_undo();
+            }
             _ => {}
         }
     }
@@ -106,6 +141,7 @@ fn is_down(vk: u16) -> bool {
 
 /// Returns true when the key completed a trigger and should be swallowed.
 fn handle_key(vk: u32, scan: u32) -> bool {
+    let undo = take_undo();
     let shared = store::shared();
     if shared.paused.load(Ordering::Relaxed) {
         return false;
@@ -121,6 +157,14 @@ fn handle_key(vk: u32, scan: u32) -> bool {
     }
     match vk as u16 {
         VK_BACK => {
+            if let Some(undo) = undo.filter(|u| u.window == window && u.at.elapsed() < UNDO_WINDOW) {
+                buffer.clear();
+                thread::spawn(move || {
+                    expand::undo(undo.chars, &undo.trigger);
+                    crate::record_undo(&undo.snippet_id, undo.saved);
+                });
+                return true;
+            }
             buffer.pop();
             return false;
         }
@@ -158,11 +202,17 @@ fn handle_key(vk: u32, scan: u32) -> bool {
             return false;
         }
     }
-    let snippet = snippet.clone();
+    let snippet = expand::with_nested(snippet, &data.snippets);
     // The final key is swallowed, so only the characters already typed need deleting.
     let typed = typed_trigger.chars().count() - 1;
     if expand::input_labels(&snippet.content).is_empty() {
-        thread::spawn(move || expand::deliver(&snippet, typed));
+        let activity = ACTIVITY.load(Ordering::Relaxed);
+        thread::spawn(move || {
+            let delivered = expand::deliver(&snippet, typed);
+            if let Some(chars) = delivered.undo_chars {
+                offer_undo(activity, Undo { window, snippet_id: snippet.id, trigger: typed_trigger, chars, saved: delivered.saved, at: Instant::now() });
+            }
+        });
     } else {
         // Ask for the fill-ins first. If the user cancels, the swallowed key is typed back.
         let target = winutil::foreground_window();

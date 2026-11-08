@@ -90,6 +90,7 @@
               <button type="button" class="chip" data-ph="{clipboard}">{clipboard}</button>
               <button type="button" class="chip" data-ph="{uuid}">{uuid}</button>
               <button type="button" class="chip" data-ph="{input:Name}">{input:…}</button>
+              <button type="button" class="chip" data-ph="{snippet:Name}" title="Include another snippet by its name or trigger">{snippet:…}</button>
             </div>
             <div class="hint" style="margin-top:8px">Other formats: add codes after a colon, like <code>{date:DD/MM/YYYY}</code> or <code>{time:hh:mm A}</code>. Codes: <code>YYYY</code> <code>YY</code> <code>MMMM</code> <code>MMM</code> <code>MM</code> <code>DD</code> <code>D</code> <code>dddd</code> <code>ddd</code> for dates; <code>HH</code> (24-hour) <code>hh</code> (12-hour) <code>mm</code> <code>ss</code> <code>A</code> (AM/PM) for times. Put other words in [brackets].</div>
           </div>
@@ -135,6 +136,16 @@
               <button class="btn" id="hotkey-reset">Reset</button>
             </div>
             <div class="hint">Good choices: <kbd>Ctrl+Shift+Space</kbd>, <kbd>Alt+;</kbd>, <kbd>Pause</kbd>, <kbd>ScrollLock</kbd>, <kbd>F13</kbd>–<kbd>F24</kbd>.</div>
+          </div>
+
+          <div class="card">
+            <h3>Save selection hotkey</h3>
+            <p>Select text in any app and press this to turn it into a new snippet. Click the box and press the new combination.</p>
+            <div class="card-row">
+              <input class="input hotkey-input" id="save-hotkey" readonly>
+              <button class="btn" id="save-hotkey-reset">Reset</button>
+              <button class="btn" id="save-hotkey-off">Turn off</button>
+            </div>
           </div>
 
           <div class="card">

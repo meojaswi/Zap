@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use windows_sys::Win32::Foundation::GlobalFree;
 use windows_sys::Win32::System::DataExchange::{
-    CloseClipboard, CountClipboardFormats, EmptyClipboard, GetClipboardData, IsClipboardFormatAvailable,
+    CloseClipboard, CountClipboardFormats, EmptyClipboard, GetClipboardData, GetClipboardSequenceNumber,
+    IsClipboardFormatAvailable,
     OpenClipboard, RegisterClipboardFormatW, SetClipboardData,
 };
 use windows_sys::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
@@ -54,6 +55,11 @@ pub fn get_text() -> Option<String> {
         CloseClipboard();
         result
     }
+}
+
+/// Changes every time the clipboard's contents change.
+pub fn sequence() -> u32 {
+    unsafe { GetClipboardSequenceNumber() }
 }
 
 /// True when the clipboard holds something we can't restore as text (an image, copied files, ...).

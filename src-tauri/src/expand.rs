@@ -138,6 +138,84 @@ pub fn fill_inputs_html(html: &str, values: &HashMap<String, String>) -> String 
     out
 }
 
+const MAX_NESTING: usize = 8;
+/// Stops a few snippets that each include the others many times from growing without end.
+const MAX_NESTED_BYTES: usize = 100_000;
+
+/// Finds the snippet a {snippet:...} names: by name first, then by trigger, with or without its symbol.
+fn find_nested<'a>(reference: &str, all: &'a [Snippet]) -> Option<&'a Snippet> {
+    let bare = |s: &'a str| s.trim_start_matches(|c: char| !c.is_alphanumeric());
+    all.iter()
+        .find(|s| s.name.eq_ignore_ascii_case(reference))
+        .or_else(|| all.iter().find(|s| s.trigger.eq_ignore_ascii_case(reference)))
+        .or_else(|| all.iter().find(|s| bare(&s.trigger).eq_ignore_ascii_case(reference)))
+}
+
+struct Nesting<'a> {
+    all: &'a [Snippet],
+    /// Show a Sensitive snippet as [Name] instead of its text (for previews).
+    mask_sensitive: bool,
+    used_sensitive: bool,
+    bytes: usize,
+}
+
+impl Nesting<'_> {
+    /// Replaces each {snippet:...}. Unknown names and loops are left as written, so they're visible.
+    fn expand(&mut self, text: &str, html: bool, stack: &mut Vec<String>) -> String {
+        let mut out = String::new();
+        let mut rest = text;
+        while let Some(start) = rest.find("{snippet:") {
+            let after = &rest[start + "{snippet:".len()..];
+            let Some(end) = after.find('}') else { break };
+            out.push_str(&rest[..start]);
+            let placeholder = &rest[start..start + "{snippet:".len() + end + 1];
+            let reference = if html { unescape_html(&after[..end]) } else { after[..end].to_string() };
+            rest = &after[end + 1..];
+            let found = find_nested(reference.trim(), self.all)
+                .filter(|s| !stack.contains(&s.id) && stack.len() < MAX_NESTING && self.bytes < MAX_NESTED_BYTES);
+            let Some(nested) = found else {
+                out.push_str(placeholder);
+                continue;
+            };
+            if nested.sensitive {
+                self.used_sensitive = true;
+                if self.mask_sensitive {
+                    out.push_str(&format!("[{}]", nested.name));
+                    continue;
+                }
+            }
+            self.bytes += nested.content.len();
+            let inner = match (html, nested.html.as_deref().filter(|_| !nested.sensitive)) {
+                (false, _) => nested.content.clone(),
+                (true, Some(formatted)) => formatted.to_string(),
+                (true, None) => escape_html(&nested.content).replace('\n', "<br>"),
+            };
+            stack.push(nested.id.clone());
+            out.push_str(&self.expand(&inner, html, stack));
+            stack.pop();
+        }
+        out.push_str(rest);
+        out
+    }
+}
+
+/// The snippet with its {snippet:...} parts filled in, ready for its fill-ins and placeholders.
+/// Including a Sensitive snippet makes the whole result Sensitive, so it never touches the clipboard.
+pub fn with_nested(snippet: &Snippet, all: &[Snippet]) -> Snippet {
+    let mut nesting = Nesting { all, mask_sensitive: false, used_sensitive: false, bytes: 0 };
+    let mut result = snippet.clone();
+    result.content = nesting.expand(&snippet.content, false, &mut vec![snippet.id.clone()]);
+    nesting.bytes = 0;
+    result.html = snippet.html.as_deref().map(|html| nesting.expand(html, true, &mut vec![snippet.id.clone()]));
+    result.sensitive |= nesting.used_sensitive;
+    result
+}
+
+/// Text for the editor's preview: nested snippets filled in, Sensitive ones shown only by name.
+pub fn nested_for_preview(content: &str, all: &[Snippet]) -> String {
+    Nesting { all, mask_sensitive: true, used_sensitive: false, bytes: 0 }.expand(content, false, &mut Vec::new())
+}
+
 /// Fills in placeholders like {date} and {clipboard}.
 pub fn render(content: &str) -> String {
     render_at(content, chrono::Local::now(), false)
@@ -168,23 +246,95 @@ fn render_at(content: &str, now: chrono::DateTime<chrono::Local>, html: bool) ->
     text
 }
 
+/// What was inserted, for undoing it.
+pub struct Delivered {
+    /// Backspaces that remove the text again, when that can be trusted.
+    pub undo_chars: Option<usize>,
+    pub saved: usize,
+}
+
+const MAX_UNDO_CHARS: usize = 500;
+
+/// How many backspaces remove the inserted text, or None if that can't be known. Too many would
+/// eat the user's own text, so block-level formatting and emoji (one or several presses, depending
+/// on the app) aren't undoable, and very long text would take too long to remove.
+fn undo_length(text: &str, html: Option<&str>) -> Option<usize> {
+    if html.is_some_and(|h| ["<ul", "<ol", "<li", "<p", "<div"].iter().any(|tag| h.contains(tag))) {
+        return None;
+    }
+    if text.chars().any(|c| c as u32 > 0xFFFF || c == '\u{200D}' || c == '\u{FE0F}') {
+        return None;
+    }
+    let count = text.chars().filter(|c| *c != '\r').count();
+    (count > 0 && count <= MAX_UNDO_CHARS).then_some(count)
+}
+
+/// Removes an expansion and types its trigger back. The hook ignores these keys, so it won't re-fire.
+pub fn undo(chars: usize, trigger: &str) {
+    sleep(Duration::from_millis(30));
+    input::backspaces(chars);
+    sleep(Duration::from_millis(50));
+    input::type_text(trigger);
+}
+
+/// Copies what's selected in the focused app and puts the user's clipboard back.
+pub fn copy_selection() -> Result<String, String> {
+    const NOTHING: &str = "Nothing was selected. Select some text, then press the hotkey again.";
+    if !input::wait_for_modifiers_up(Duration::from_secs(2)) {
+        return Err("Let go of the hotkey quickly so Zap can copy the selection.".to_string());
+    }
+    // An image or files couldn't be put back afterwards, so they're left alone.
+    if clipboard::holds_non_text() {
+        return Err("Zap couldn't copy the selection because an image or files are on the clipboard. Paste the text here instead.".to_string());
+    }
+    let previous = clipboard::get_text();
+    let before = clipboard::sequence();
+    input::ctrl_c();
+    let mut waited = 0;
+    while clipboard::sequence() == before {
+        if waited >= 500 {
+            return Err(NOTHING.to_string());
+        }
+        sleep(Duration::from_millis(10));
+        waited += 10;
+    }
+    // Let the app finish writing to the clipboard.
+    sleep(Duration::from_millis(40));
+    let copied = clipboard::get_text();
+    match previous {
+        Some(previous) => {
+            clipboard::set_text_private(&previous);
+        }
+        None => clipboard::clear(),
+    }
+    let text = copied.unwrap_or_default().replace("\r\n", "\n");
+    let text = text.trim_end_matches('\n');
+    if text.is_empty() {
+        return Err(NOTHING.to_string());
+    }
+    Ok(text.to_string())
+}
+
 /// Deletes `backspaces` typed characters, inserts the snippet, then counts the use.
-pub fn deliver(snippet: &Snippet, backspaces: usize) {
-    deliver_filled(snippet, backspaces, &HashMap::new());
+pub fn deliver(snippet: &Snippet, backspaces: usize) -> Delivered {
+    deliver_filled(snippet, backspaces, &HashMap::new())
 }
 
 /// Like `deliver`, with the values the user entered for the snippet's {input:...} fill-ins.
 /// Placeholders are filled first, so a typed value like "{date}" is inserted as written.
-pub fn deliver_filled(snippet: &Snippet, backspaces: usize, values: &HashMap<String, String>) {
+pub fn deliver_filled(snippet: &Snippet, backspaces: usize, values: &HashMap<String, String>) -> Delivered {
     let text = fill_inputs(&render(&snippet.content), values);
     // Formatted snippets are pasted; Sensitive ones are always typed as plain text.
-    match snippet.html.as_deref().filter(|_| !snippet.sensitive) {
+    let formatted = snippet.html.as_deref().filter(|_| !snippet.sensitive);
+    match formatted {
         Some(html) => insert_formatted(&fill_inputs_html(&render_html(html), values), &text, backspaces),
         None => insert(&text, snippet.sensitive, backspaces),
     }
     // Inline, the trigger typed was `backspaces` + 1 characters (it may be the secondary one).
     let typed = if backspaces > 0 { backspaces + 1 } else { snippet.trigger.chars().count() };
-    crate::record_use(&snippet.id, chars_saved(&snippet.content, typed));
+    let saved = chars_saved(&snippet.content, typed);
+    crate::record_use(&snippet.id, saved);
+    Delivered { undo_chars: undo_length(&text, formatted), saved }
 }
 
 /// Characters the user didn't type. Text from {clipboard} doesn't count (they'd have pasted it
@@ -345,6 +495,78 @@ mod tests {
             super::fill_inputs_html("<b>{input:A&amp;B}</b>", &values),
             "<b>&lt;script&gt;x&lt;/script&gt; &amp; &quot;hi&quot;</b>"
         );
+    }
+
+    fn snip(id: &str, name: &str, trigger: &str, content: &str) -> crate::store::Snippet {
+        serde_json::from_value(serde_json::json!({ "id": id, "name": name, "trigger": trigger, "content": content })).unwrap()
+    }
+
+    #[test]
+    fn nested_snippets_fill_in_by_name_or_trigger() {
+        let all = [snip("1", "Signature", "`sig", "Regards, {snippet:Team}"), snip("2", "Team", "`team", "Zap {date:YYYY}")];
+        let outer = snip("3", "Mail", "`m", "Hi\n{snippet:signature} / {snippet:`team} / {snippet:team}");
+        assert_eq!(super::with_nested(&outer, &all).content, "Hi\nRegards, Zap {date:YYYY} / Zap {date:YYYY} / Zap {date:YYYY}");
+    }
+
+    #[test]
+    fn nested_fill_ins_are_asked_for() {
+        let all = [snip("1", "Greeting", "`g", "Hi {input:Name}")];
+        let outer = snip("2", "Mail", "`m", "{snippet:Greeting}, {input:Topic}");
+        assert_eq!(super::input_labels(&super::with_nested(&outer, &all).content), ["Name", "Topic"]);
+    }
+
+    #[test]
+    fn unknown_names_and_loops_are_left_as_written() {
+        let a = snip("1", "A", "`a", "a{snippet:B}");
+        let b = snip("2", "B", "`b", "b{snippet:A}");
+        let all = [a.clone(), b];
+        assert_eq!(super::with_nested(&a, &all).content, "ab{snippet:A}");
+        let missing = snip("3", "C", "`c", "x{snippet:Nope}y");
+        assert_eq!(super::with_nested(&missing, &all).content, "x{snippet:Nope}y");
+    }
+
+    #[test]
+    fn repeated_nesting_stays_bounded() {
+        let body = |next: &str| format!("{{snippet:{next}}}").repeat(20);
+        let all: Vec<_> = ["A", "B", "C", "D", "E", "F", "G"].windows(2).map(|w| snip(w[0], w[0], "", &body(w[1]))).collect();
+        let result = super::with_nested(&all[0], &all);
+        assert!(result.content.len() < 2_000_000, "{}", result.content.len());
+    }
+
+    #[test]
+    fn a_sensitive_part_makes_the_whole_snippet_sensitive() {
+        let mut secret = snip("1", "Pin", "`pin", "1234");
+        secret.sensitive = true;
+        let all = [secret];
+        let mut outer = snip("2", "Mail", "`m", "Code {snippet:Pin}");
+        outer.html = Some("<b>Code</b> {snippet:Pin}".to_string());
+        let result = super::with_nested(&outer, &all);
+        assert!(result.sensitive);
+        assert_eq!(result.content, "Code 1234");
+        assert_eq!(super::nested_for_preview(&outer.content, &all), "Code [Pin]");
+    }
+
+    #[test]
+    fn nested_text_is_escaped_inside_formatted_snippets() {
+        let all = [snip("1", "A&B", "`ab", "x < y\nz")];
+        let mut outer = snip("2", "Mail", "`m", "{snippet:A&B}");
+        outer.html = Some("<b>{snippet:A&amp;B}</b>".to_string());
+        assert_eq!(super::with_nested(&outer, &all).html.unwrap(), "<b>x &lt; y<br>z</b>");
+    }
+
+    #[test]
+    fn undo_length_only_trusts_what_backspace_removes_exactly() {
+        use super::undo_length;
+        assert_eq!(undo_length("hello", None), Some(5));
+        assert_eq!(undo_length("a\nb", None), Some(3));
+        assert_eq!(undo_length("a\r\nb", None), Some(3));
+        assert_eq!(undo_length("नमस्ते", None), Some(6));
+        assert_eq!(undo_length("<b>", Some("&lt;b&gt;")), Some(3));
+        assert_eq!(undo_length("hi", Some("<b>hi</b>")), Some(2));
+        assert_eq!(undo_length("one\ntwo", Some("<ul><li>one</li><li>two</li></ul>")), None);
+        assert_eq!(undo_length("ok 😀", None), None);
+        assert_eq!(undo_length("", None), None);
+        assert_eq!(undo_length(&"x".repeat(501), None), None);
     }
 
     #[test]

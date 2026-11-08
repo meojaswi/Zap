@@ -302,6 +302,14 @@ async function refresh() {
 document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 listen("popup-shown", refresh);
+listen("popup-new-from-selection", async (e) => {
+  snippets = (await invoke("get_data")).snippets;
+  input.value = "";
+  search();
+  openForm();
+  if (e.payload.text) $("add-content").value = e.payload.text;
+  else showFormError(e.payload.error);
+});
 listen("data-changed", async () => {
   snippets = (await invoke("get_data")).snippets;
   search();

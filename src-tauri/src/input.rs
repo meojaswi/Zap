@@ -10,9 +10,12 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     VK_CONTROL, VK_RETURN, VK_SHIFT, VK_TAB,
 };
 
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LWIN, VK_MENU, VK_RWIN};
+
 use crate::winutil;
 
 const VK_V: u16 = 0x56;
+const VK_C: u16 = 0x43;
 
 fn key(vk: u16, scan: u16, flags: u32) -> INPUT {
     INPUT {
@@ -44,6 +47,23 @@ pub fn backspaces(count: usize) {
 
 pub fn ctrl_v() {
     send(&[key(VK_CONTROL, 0, 0), key(VK_V, 0, 0), key(VK_V, 0, KEYEVENTF_KEYUP), key(VK_CONTROL, 0, KEYEVENTF_KEYUP)]);
+}
+
+pub fn ctrl_c() {
+    send(&[key(VK_CONTROL, 0, 0), key(VK_C, 0, 0), key(VK_C, 0, KEYEVENTF_KEYUP), key(VK_CONTROL, 0, KEYEVENTF_KEYUP)]);
+}
+
+/// Waits for Ctrl, Shift, Alt and Win to be let go, so a synthetic shortcut isn't changed by held keys.
+pub fn wait_for_modifiers_up(timeout: Duration) -> bool {
+    let start = std::time::Instant::now();
+    while start.elapsed() < timeout {
+        let held = [VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN].iter().any(|vk| unsafe { GetAsyncKeyState(*vk as i32) } < 0);
+        if !held {
+            return true;
+        }
+        sleep(Duration::from_millis(10));
+    }
+    false
 }
 
 /// Pause after each synthetic key. Apps like Windows 11 Notepad work out a key's character from the
