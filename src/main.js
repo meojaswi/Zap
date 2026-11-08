@@ -473,7 +473,8 @@ document.querySelectorAll("#f-rich-toolbar [data-cmd]").forEach((button) =>
     updatePreview();
   })
 );
-document.querySelectorAll(".chip").forEach((chip) => chip.addEventListener("click", () => insertPlaceholder(chip.dataset.ph)));
+// Only the placeholder chips insert text; the formatting toolbar buttons share their look.
+document.querySelectorAll(".chip[data-ph]").forEach((chip) => chip.addEventListener("click", () => insertPlaceholder(chip.dataset.ph)));
 
 $("status").addEventListener("click", async () => {
   await invoke("set_paused", { paused: !state.paused });
