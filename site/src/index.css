@@ -90,15 +90,6 @@ body {
   animation: pulse-dot 1.6s ease-in-out infinite;
 }
 
-@keyframes spin {
-  to {
-    rotate: 360deg;
-  }
-}
-.ring-spin {
-  animation: spin 8s linear infinite;
-}
-
 /* Staggered entrance: fades and lifts in once scrolled into view. */
 .reveal {
   opacity: 0;
@@ -133,8 +124,7 @@ body {
     scroll-behavior: auto;
   }
   .caret,
-  .live-dot,
-  .ring-spin {
+  .live-dot {
     animation: none;
   }
   .reveal,

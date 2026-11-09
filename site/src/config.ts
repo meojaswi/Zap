@@ -7,10 +7,10 @@ export const RELEASES_URL = `${REPO_URL}/releases/latest`;
 // Shown in the Contact section. Replace these with your own details.
 export interface Person {
   name: string;
-  /** ASCII art from site/scripts/ascii_portraits.py. Leave empty to show initials instead. */
+  /** ASCII art from site/scripts/ascii_portraits.py. */
   portrait: string[];
   handle?: string;
-  /** Profile links; the first one is also where the avatar coin points. */
+  /** Profile links; the first one is also where the portrait points. */
   links: { label: string; url: string }[];
 }
 

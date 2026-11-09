@@ -7,16 +7,16 @@ The site ships only the text, never the photos. Needs Pillow. Run from anywhere:
 import json
 from pathlib import Path
 
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageFilter
 
 SITE = Path(__file__).resolve().parent.parent
-ROWS = 32
+ROWS = 48
 COLS = ROWS * 2  # monospace characters are about twice as tall as they are wide
 RAMP = " .:-=+*#%@"
 PORTRAITS = {
     # name: (file, left, top, side of the square crop as fractions of the image width)
-    "OJASWI": ("ojaswi.png", 0.10, 0.02, 0.76),
-    "HARSH": ("harsh.png", 0.26, 0.02, 0.60),
+    "OJASWI": ("ojaswi.png", 0.08, 0.0, 0.84),
+    "HARSH": ("harsh.png", 0.20, 0.02, 0.68),
 }
 
 
@@ -26,19 +26,30 @@ def to_ascii(path: Path, left: float, top: float, side: float) -> list[str]:
     box = (int(left * width), int(top * width), int((left + side) * width), int((top + side) * width))
     crop = photo.crop(box).resize((COLS, ROWS), Image.LANCZOS)
     alpha = crop.getchannel("A")
-    # Local contrast keeps eyes and hairline readable at this tiny size.
-    gray = ImageOps.autocontrast(crop.convert("L"), cutoff=1).filter(ImageFilter.UnsharpMask(2, 130, 0))
+    gray = crop.convert("L")
+    blur = gray.filter(ImageFilter.GaussianBlur(1.5))
+    # Stretch tones over the middle of the frame, where the face is, so dark hair and clothes can't skew them.
+    tones = sorted(
+        gray.getpixel((x, y))
+        for y in range(int(0.3 * ROWS), int(0.72 * ROWS))
+        for x in range(int(0.25 * COLS), int(0.75 * COLS))
+        if alpha.getpixel((x, y)) >= 128
+    )
+    low, high = tones[len(tones) // 50], tones[-len(tones) // 50]
+    spread = max(1, high - low)
 
     lines = []
     for y in range(ROWS):
         line = ""
         for x in range(COLS):
-            # Stay inside the round coin: x counts double because cells are half as wide.
-            outside = ((x + 0.5) / COLS - 0.5) ** 2 + ((y + 0.5) / ROWS - 0.5) ** 2 > 0.25
-            if outside or alpha.getpixel((x, y)) < 128:
+            if alpha.getpixel((x, y)) < 128:
                 line += " "
                 continue
-            level = gray.getpixel((x, y)) / 255
+            value = gray.getpixel((x, y))
+            tone = max(0.0, min(1.0, (value - low) / spread))
+            # Comparing each cell with its surroundings is what keeps eyes, nose and mouth visible.
+            detail = (value - blur.getpixel((x, y))) / spread
+            level = max(0.0, min(1.0, tone**1.6 + 0.8 * detail))
             line += RAMP[min(len(RAMP) - 1, 1 + int(level * (len(RAMP) - 1)))]
         lines.append(line)
     return lines
@@ -50,8 +61,6 @@ def main() -> None:
         lines = to_ascii(SITE / "art" / file, left, top, side)
         out.append(f"export const {name}: string[] = {json.dumps(lines, indent=2)};")
         out.append("")
-        print(name)
-        print("\n".join(lines))
     (SITE / "src" / "portraits.ts").write_text("\n".join(out), encoding="utf-8", newline="\n")
 
 
