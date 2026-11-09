@@ -19,9 +19,9 @@ export function Section({
       <div className="mx-auto max-w-6xl">
         <Reveal>
           <p className="label text-muted">
-            <span className="text-accent">{index}</span> / {eyebrow}
+            <span className="text-accent-text">{index}</span> / {eyebrow}
           </p>
-          <h2 className="mt-4 max-w-2xl text-3xl font-medium leading-[1.08] tracking-tight sm:text-[40px]">{title}</h2>
+          <h2 className="mt-4 max-w-2xl text-2xl font-semibold leading-[1.15] tracking-tight sm:text-[32px]">{title}</h2>
         </Reveal>
         <div className="mt-12">{children}</div>
       </div>

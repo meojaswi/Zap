@@ -53,25 +53,25 @@ export function TypingDemo() {
   const buffer = expanded ? "" : example.trigger.slice(0, typed);
 
   return (
-    <div className="w-full rounded-card border border-line bg-surface/90 shadow-[0_40px_80px_-30px_rgba(0,0,0,1)] backdrop-blur-sm">
+    <div className="w-full rounded-card border border-line bg-surface">
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <span className="live-dot size-1.5 rounded-full bg-accent" />
         <span className="label text-muted">inline engine</span>
-        <span className="label ml-auto text-zinc-500">target: {example.app}</span>
+        <span className="label ml-auto text-muted">target: {example.app}</span>
       </div>
 
-      <div className="m-3 rounded-card border border-line bg-surface-2">
+      <div className="m-3 rounded-card border border-line bg-subtle">
         <pre
-          className="min-h-36 whitespace-pre-wrap px-5 py-5 font-mono text-sm leading-relaxed text-zinc-200"
+          className="min-h-36 whitespace-pre-wrap px-5 py-5 font-mono text-sm leading-relaxed text-fg"
           aria-live="polite"
         >
           {example.before}
           {expanded ? (
-            <span className="bg-accent/15 text-white shadow-[inset_0_-1px_0_0_#facc15]">{example.expansion}</span>
+            <span className="bg-accent text-accent-ink">{example.expansion}</span>
           ) : (
-            <span className="text-white">{buffer}</span>
+            <span className="text-fg">{buffer}</span>
           )}
-          <span className="caret ml-px inline-block h-[1.1em] w-[0.5em] translate-y-[0.15em] bg-accent" />
+          <span className="caret ml-px inline-block h-[1.1em] w-[0.5em] translate-y-[0.15em] bg-accent-text" />
         </pre>
       </div>
 
@@ -82,8 +82,8 @@ export function TypingDemo() {
           ["status", expanded ? "zapped" : "listening"],
         ].map(([k, v], i) => (
           <div key={k} className={`px-4 py-3 ${i ? "border-l border-line" : ""}`}>
-            <dt className="label text-[10px] text-zinc-500">{k}</dt>
-            <dd className={`mt-1.5 truncate font-mono text-xs ${k === "status" && expanded ? "text-accent" : "text-zinc-300"}`}>
+            <dt className="label text-[10px] text-muted">{k}</dt>
+            <dd className={`mt-1.5 truncate font-mono text-xs ${k === "status" && expanded ? "text-accent-text" : "text-fg"}`}>
               {v}
             </dd>
           </div>

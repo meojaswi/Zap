@@ -47,12 +47,11 @@ export function DitherField({ className = "" }: { className?: string }) {
           v *= 1 - Math.abs(ny - 0.55) * 1.1;
           const on = v > BAYER[(y & 3) * 4 + (x & 3)];
           const i = (y * w + x) * 4;
-          // Mostly dim zinc dots; the strongest values tip into Zap yellow.
-          const lit = v > 0.82;
-          d[i] = on ? (lit ? 250 : 63) : 0;
-          d[i + 1] = on ? (lit ? 204 : 63) : 0;
-          d[i + 2] = on ? (lit ? 21 : 70) : 0;
-          d[i + 3] = on ? (lit ? 200 : 120) : 0;
+          // Faint grey dots that read on both light and dark backgrounds.
+          d[i] = on ? 115 : 0;
+          d[i + 1] = on ? 115 : 0;
+          d[i + 2] = on ? 115 : 0;
+          d[i + 3] = on ? 70 : 0;
         }
       }
       ctx.putImageData(image, 0, 0);

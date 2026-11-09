@@ -65,7 +65,10 @@ function Coin({
   );
 }
 
-/** "ZAP by <makers>": pixel wordmark, then two profile coins. Hovering one hides the other and shows its details. */
+/**
+ * "ZAP by <makers>": pixel wordmark, then two profile coins. Hovering one hides the other and shows its details.
+ * Drawn like a dark screen in both themes, so its colours are fixed rather than design tokens.
+ */
 export function ContactBanner() {
   const [active, setActive] = useState<number | null>(null);
   const people = CONTACT.people.slice(0, 2);
@@ -76,12 +79,12 @@ export function ContactBanner() {
       <StaticNoise className="absolute inset-0 size-full opacity-90" />
       <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.55)_100%)]" />
       {/* Dashed baseline through the wordmark and the lower coin */}
-      <div aria-hidden className="absolute inset-x-0 top-1/2 border-t border-dashed border-line" />
+      <div aria-hidden className="absolute inset-x-0 top-1/2 border-t border-dashed border-white/15" />
 
       <div className="relative flex flex-col items-center gap-10 md:flex-row md:justify-center md:gap-10">
         <PixelWordmark text="ZAP" className="h-20 w-auto sm:h-28 lg:h-32" />
 
-        <span className="font-serif text-3xl italic text-zinc-200 sm:text-4xl [text-shadow:0_0_18px_#000,0_0_6px_#000]">by</span>
+        <span className="font-mono text-2xl text-zinc-200 sm:text-3xl [text-shadow:0_0_18px_#000,0_0_6px_#000]">by</span>
 
         <div className="relative h-[17rem] w-[18rem] shrink-0 sm:h-[18.5rem] sm:w-[19.5rem]">
           {people.map((person, i) => (

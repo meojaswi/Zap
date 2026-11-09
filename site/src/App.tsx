@@ -60,23 +60,23 @@ export default function App() {
 
   return (
     <>
-      <header className="sticky top-0 z-20 border-b border-line bg-black/75 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-line bg-bg">
         <nav className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-          <a href="#top" className="flex items-center gap-2 font-medium tracking-tight">
+          <a href="#top" className="flex items-center gap-2 font-semibold tracking-tight">
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-6" />
             Zap
           </a>
           <div className="ml-auto flex items-center gap-6">
-            <a href="#features" className="label hidden text-muted transition-colors hover:text-white sm:inline">
+            <a href="#features" className="label hidden text-muted transition-colors hover:text-fg sm:inline">
               features
             </a>
-            <a href="#privacy" className="label hidden text-muted transition-colors hover:text-white sm:inline">
+            <a href="#privacy" className="label hidden text-muted transition-colors hover:text-fg sm:inline">
               privacy
             </a>
-            <a href="#contact" className="label text-muted transition-colors hover:text-white">
+            <a href="#contact" className="label text-muted transition-colors hover:text-fg">
               contact
             </a>
-            <a href={REPO_URL} className="label text-muted transition-colors hover:text-white">
+            <a href={REPO_URL} className="label text-muted transition-colors hover:text-fg">
               github ↗
             </a>
           </div>
@@ -87,22 +87,22 @@ export default function App() {
         {/* Hero */}
         <section className="relative overflow-hidden px-4 pb-20 pt-10 sm:px-6">
           <DitherField className="absolute inset-0 size-full opacity-70" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_40%,rgba(0,0,0,0.95),transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_40%,var(--color-bg),transparent_60%)]" />
 
           <div className="relative mx-auto max-w-6xl">
             <Reveal className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-line pb-4">
               <span className="label text-muted">zap / text expander v{release.version ?? "0.1"}</span>
-              <span className="label flex items-center gap-2 text-white">
+              <span className="label flex items-center gap-2 text-fg">
                 <span className="live-dot size-1.5 rounded-full bg-accent" />
                 [active]
               </span>
-              <span className="label ml-auto hidden text-zinc-500 sm:inline">platform: windows 10 / 11 · x64</span>
+              <span className="label ml-auto hidden text-muted sm:inline">platform: windows 10 / 11 · x64</span>
             </Reveal>
 
             <div className="grid items-center gap-14 pt-16 lg:grid-cols-[1fr_1.05fr] lg:pt-24">
               <Reveal>
-                <p className="label text-accent">type, zap, done</p>
-                <h1 className="mt-6 text-5xl font-medium leading-[1.04] tracking-tight sm:text-[64px]">
+                <p className="label text-accent-text">type, zap, done</p>
+                <h1 className="mt-6 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-[56px]">
                   <span className="mask">
                     <span>Type less.</span>
                   </span>
@@ -120,7 +120,7 @@ export default function App() {
                   <DownloadButton release={release} />
                   <a
                     href={REPO_URL}
-                    className="label rounded-full border border-line px-4 py-3 text-muted transition-colors hover:border-zinc-500 hover:text-white"
+                    className="label rounded-card border border-line px-4 py-3 text-muted transition-colors hover:border-line-strong hover:text-fg"
                   >
                     view source
                   </a>
@@ -132,15 +132,15 @@ export default function App() {
               </Reveal>
             </div>
 
-            <div className="mt-20 grid grid-cols-2 border border-line bg-black/60 backdrop-blur-sm lg:grid-cols-4">
+            <div className="mt-20 grid grid-cols-2 border border-line bg-bg lg:grid-cols-4">
               {METRICS.map(([value, label], i) => (
                 <Reveal
                   key={label}
                   delay={i * 90}
                   className={`px-5 py-6 ${i % 2 ? "border-l border-line" : ""} ${i > 1 ? "border-t border-line lg:border-t-0" : ""} ${i === 2 ? "lg:border-l" : ""}`}
                 >
-                  <div className="text-3xl font-medium tracking-tight">{value}</div>
-                  <div className="label mt-2 text-zinc-500">{label}</div>
+                  <div className="text-3xl font-semibold tracking-tight">{value}</div>
+                  <div className="label mt-2 text-muted">{label}</div>
                 </Reveal>
               ))}
             </div>
@@ -149,7 +149,7 @@ export default function App() {
 
         {/* Features */}
         <Section id="features" index="01" eyebrow="system modules" title="Everything you type twice, typed once.">
-          <div className="grid gap-4 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <Reveal className="lg:col-span-7">
               <Panel label="module: inline expansion" meta="hook · local" live>
                 <div className="p-6">
@@ -157,12 +157,12 @@ export default function App() {
                     Type a trigger in your browser, Slack, Word or editor and Zap replaces it with the full text. No
                     window, no shortcut.
                   </p>
-                  <div className="mt-6 rounded-card border border-line bg-surface-2">
+                  <div className="mt-6 rounded-card border border-line bg-subtle">
                     {TRIGGERS.map(([t, out]) => (
                       <div key={t} className="flex items-center gap-4 border-b border-line/60 px-4 py-3 last:border-0">
-                        <code className="w-20 shrink-0 font-mono text-xs text-accent">{t}</code>
-                        <span className="text-zinc-600">→</span>
-                        <span className="truncate font-mono text-xs text-zinc-300">{out}</span>
+                        <code className="w-20 shrink-0 font-mono text-xs text-accent-text">{t}</code>
+                        <span className="text-faint">→</span>
+                        <span className="truncate font-mono text-xs text-fg">{out}</span>
                       </div>
                     ))}
                   </div>
@@ -186,8 +186,8 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-px bg-line">
                   {PLACEHOLDERS.map(([ph, out]) => (
                     <div key={ph} className="bg-surface px-4 py-4">
-                      <code className="font-mono text-xs text-white">{ph}</code>
-                      <div className="mt-1.5 truncate text-xs text-zinc-500">{out}</div>
+                      <code className="font-mono text-xs text-fg">{ph}</code>
+                      <div className="mt-1.5 truncate text-xs text-muted">{out}</div>
                     </div>
                   ))}
                 </div>
@@ -200,15 +200,15 @@ export default function App() {
                   {CONTROLS.map(([name, body, kind]) => (
                     <li key={name} className="flex items-center gap-4 border-b border-line/60 px-6 py-4 last:border-0">
                       <div className="min-w-0 flex-1">
-                        <div className="label text-white">{name}</div>
+                        <div className="label text-fg">{name}</div>
                         <div className="mt-1.5 text-sm text-muted">{body}</div>
                       </div>
                       {kind === "toggle" ? (
-                        <span className="relative h-5 w-9 shrink-0 rounded-full bg-accent">
-                          <span className="absolute right-0.5 top-0.5 size-4 rounded-full bg-accent-ink" />
+                        <span className="relative h-5 w-9 shrink-0 rounded-card bg-invert-bg">
+                          <span className="absolute right-0.5 top-0.5 size-4 rounded-[1px] bg-accent" />
                         </span>
                       ) : (
-                        <span className="label shrink-0 rounded-full border border-line px-3 py-1.5 text-[10px] text-zinc-400">
+                        <span className="label shrink-0 rounded-card border border-line px-3 py-1.5 text-[10px] text-muted">
                           {kind}
                         </span>
                       )}
@@ -222,13 +222,13 @@ export default function App() {
 
         {/* Privacy */}
         <Section id="privacy" index="02" eyebrow="security telemetry" title="It sees your keystrokes. So it was built to forget them.">
-          <div className="grid gap-4 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <Reveal className="lg:col-span-4">
               <p className="leading-[1.6] text-muted">
                 Inline expansion needs a keyboard hook, so privacy isn't a feature here — it's the architecture.
                 Everything stays on your machine.
               </p>
-              <p className="mt-6 text-sm leading-[1.6] text-zinc-500">
+              <p className="mt-6 text-sm leading-[1.6] text-muted">
                 Still, don't store passwords in Zap. A password manager is the right place for those.
               </p>
             </Reveal>
@@ -237,9 +237,9 @@ export default function App() {
                 <ul className="font-mono text-sm">
                   {SECURITY.map(([key, text]) => (
                     <li key={key} className="flex gap-4 border-b border-line/60 px-5 py-4 last:border-0">
-                      <span className="label shrink-0 pt-0.5 text-accent">[ok]</span>
-                      <span className="label w-24 shrink-0 pt-0.5 text-zinc-400">{key}</span>
-                      <span className="text-xs leading-relaxed text-zinc-300 sm:text-sm">{text}</span>
+                      <span className="label shrink-0 pt-0.5 text-accent-text">[ok]</span>
+                      <span className="label w-24 shrink-0 pt-0.5 text-muted">{key}</span>
+                      <span className="text-xs leading-relaxed text-fg sm:text-sm">{text}</span>
                     </li>
                   ))}
                 </ul>
@@ -255,7 +255,7 @@ export default function App() {
               <Reveal as="li" key={title} delay={i * 110}>
                 <Panel label={`step 0${i + 1}`} meta={title}>
                   <div className="p-6">
-                    <div className="text-2xl font-medium capitalize tracking-tight">{title}</div>
+                    <div className="text-2xl font-semibold capitalize tracking-tight">{title}</div>
                     <p className="mt-3 text-sm leading-[1.6] text-muted">{body}</p>
                   </div>
                 </Panel>
@@ -267,14 +267,14 @@ export default function App() {
         {/* CTA */}
         <section className="relative overflow-hidden border-t border-line px-4 py-28 sm:px-6">
           <DitherField className="absolute inset-0 size-full opacity-40" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.92),transparent_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-bg),transparent_70%)]" />
           <Reveal className="relative mx-auto max-w-2xl text-center">
-            <p className="label text-accent">ready</p>
-            <h2 className="mt-5 text-4xl font-medium leading-[1.04] tracking-tight sm:text-[56px]">Start zapping.</h2>
+            <p className="label text-accent-text">ready</p>
+            <h2 className="mt-5 text-3xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">Start zapping.</h2>
             <p className="mx-auto mt-6 max-w-md text-sm leading-[1.6] text-muted">
               Free and open source. The installer isn't code-signed yet, so if Edge says it isn't commonly downloaded,
-              choose <span className="text-white">… → Keep → Show more → Keep anyway</span>. If Windows shows a warning,
-              click <span className="text-white">More info → Run anyway</span>.
+              choose <span className="text-fg">… → Keep → Show more → Keep anyway</span>. If Windows shows a warning,
+              click <span className="text-fg">More info → Run anyway</span>.
             </p>
             <div className="mt-10 flex justify-center">
               <DownloadButton release={release} />
@@ -290,7 +290,7 @@ export default function App() {
               <a href={`mailto:${CONTACT.email}`} className="block h-full">
                 <Panel label="email" meta="reply in a few days">
                   <div className="p-6">
-                    <div className="truncate font-mono text-sm text-accent">{CONTACT.email}</div>
+                    <div className="truncate font-mono text-sm text-accent-text">{CONTACT.email}</div>
                     <p className="mt-3 text-sm leading-[1.6] text-muted">For questions, feedback or anything else.</p>
                   </div>
                 </Panel>
@@ -300,7 +300,7 @@ export default function App() {
               <a href={`${REPO_URL}/issues`} className="block h-full">
                 <Panel label="github issues" meta="public">
                   <div className="p-6">
-                    <div className="font-mono text-sm text-accent">open an issue ↗</div>
+                    <div className="font-mono text-sm text-accent-text">open an issue ↗</div>
                     <p className="mt-3 text-sm leading-[1.6] text-muted">Bug reports and feature requests.</p>
                   </div>
                 </Panel>
@@ -312,14 +312,14 @@ export default function App() {
 
       <footer className="border-t border-line px-4 py-8 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-          <span className="label text-zinc-500">© 2026 Kumar Ojaswi</span>
+          <span className="label text-muted">© 2026 Kumar Ojaswi</span>
           <span className="flex gap-6">
             {[
               ["github", REPO_URL],
               ["report a bug", `${REPO_URL}/issues`],
               ["releases", `${REPO_URL}/releases`],
             ].map(([label, href]) => (
-              <a key={label} href={href} className="label text-zinc-500 transition-colors hover:text-white">
+              <a key={label} href={href} className="label text-muted transition-colors hover:text-fg">
                 {label}
               </a>
             ))}
