@@ -321,6 +321,23 @@ code { color: var(--muted); }
   color: var(--muted);
 }
 .hint { color: var(--faint); font-size: 12px; margin-top: var(--space-1); }
+/* Extra detail stays out of the way until it's asked for. */
+.focus-hint { display: none; }
+.field:focus-within .focus-hint { display: block; }
+.more { margin-top: var(--space-1); color: var(--faint); font-size: 12px; }
+.more summary { width: fit-content; cursor: pointer; }
+.more summary:hover { color: var(--text); }
+.more p, .more .security-list { margin: var(--space-2) 0 0; color: var(--muted); font-size: 12px; }
+.info { display: inline-grid; place-items: center; width: 15px; height: 15px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font-size: 10px; font-weight: 400; text-transform: none; cursor: help; vertical-align: middle; }
+.check-row { display: flex; align-items: center; gap: var(--space-2); }
+.toggle-btn { display: inline-flex; align-items: center; gap: var(--space-2); }
+.toggle-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.toggle-btn input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+.toggle-btn:has(input:checked) { background: var(--invert-bg); border-color: var(--invert-bg); color: var(--invert-text); }
+.toggle-btn:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ph-icon { font-size: 11px; line-height: 1; white-space: nowrap; }
+.ph-menu { position: absolute; z-index: 5; left: 6px; bottom: 38px; width: min(440px, calc(100% - 24px)); max-height: 300px; overflow-y: auto; padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+.ph-menu .more { margin-top: var(--space-3); }
 .check { display: flex; align-items: flex-start; gap: var(--space-3); cursor: pointer; }
 .check input { margin-top: 4px; accent-color: var(--text); width: 14px; height: 14px; }
 .actions { display: flex; gap: var(--space-2); align-items: center; }

@@ -92,11 +92,9 @@ function renderStats() {
 function renderUsage() {
   const usage = $("f-usage");
   const snippet = state.snippets.find((s) => s.id === selectedId);
-  usage.hidden = !snippet || !state.settings.keepStats;
-  if (!snippet) return;
-  usage.textContent = snippet.uses
-    ? `Used ${snippet.uses.toLocaleString()} ${snippet.uses === 1 ? "time" : "times"} · last used ${formatLastUsed(snippet.lastUsed)} · saved ~${formatDuration(secondsSaved(snippet.charsSaved || 0))}`
-    : "Not used yet";
+  usage.hidden = !snippet?.uses || !state.settings.keepStats;
+  if (usage.hidden) return;
+  usage.textContent = `Used ${snippet.uses.toLocaleString()} ${snippet.uses === 1 ? "time" : "times"} · last used ${formatLastUsed(snippet.lastUsed)} · saved ~${formatDuration(secondsSaved(snippet.charsSaved || 0))}`;
 }
 
 let restarting = false;
@@ -198,6 +196,7 @@ function select(id, copyOf = null) {
   setRich(Boolean(snippet?.html));
   $("f-group").value = snippet?.group ?? "";
   $("delete-btn").hidden = creating;
+  $("f-ph-menu").hidden = true;
   editorFullscreen.exit();
   generator.reset();
   $("duplicate-btn").hidden = creating;
@@ -210,6 +209,7 @@ function select(id, copyOf = null) {
 
 function closeEditor() {
   selectedId = null;
+  $("f-ph-menu").hidden = true;
   editorFullscreen.exit();
   $("form").hidden = true;
   $("welcome").hidden = false;
@@ -301,6 +301,7 @@ function secondaryTrigger(trigger, prefix = state.settings.secondaryPrefix) {
 }
 
 function renderSecondary() {
+  $("f-trigger-tip").hidden = !/^[\p{L}\p{N}]/u.test($("f-trigger").value.trim());
   const hint = $("f-secondary");
   const advice = triggerAdvice($("f-trigger").value.trim(), state.settings.secondaryPrefix);
   hint.hidden = !advice;
@@ -452,7 +453,12 @@ document.querySelectorAll("#f-rich-toolbar [data-cmd]").forEach((button) =>
   })
 );
 // Only the placeholder chips insert text; the formatting toolbar buttons share their look.
-document.querySelectorAll(".chip[data-ph]").forEach((chip) => chip.addEventListener("click", () => insertPlaceholder(chip.dataset.ph)));
+document.querySelectorAll(".chip[data-ph]").forEach((chip) =>
+  chip.addEventListener("click", () => {
+    $("f-ph-menu").hidden = true;
+    insertPlaceholder(chip.dataset.ph);
+  })
+);
 
 $("status").addEventListener("click", async () => {
   await invoke("set_paused", { paused: !state.paused });
@@ -645,6 +651,7 @@ function renderAi() {
   // The star only appears once AI can actually run.
   const ready = Boolean(provider) && state.aiKeySaved.includes(provider);
   $("f-generate").hidden = !ready;
+  $("ai-links").hidden = ready;
   if (!ready) generator.reset();
   $("ai-provider").value = provider;
   $("ai-details").hidden = !provider;
@@ -774,6 +781,27 @@ function startFormatting() {
 }
 
 const editorImages = wireImages({ editor: $("f-rich-editor"), toolbar: $("f-rich-toolbar"), button: $("f-image"), ready: startFormatting, showError: (e) => toast(e, true) });
+// Keeps the caret in the text while the placeholder menu is used.
+$("f-ph").addEventListener("mousedown", (e) => e.preventDefault());
+$("f-ph-menu").addEventListener("mousedown", (e) => e.preventDefault());
+$("f-ph").addEventListener("click", () => {
+  $("f-ph-menu").hidden = !$("f-ph-menu").hidden;
+});
+document.addEventListener("mousedown", (e) => {
+  if (!e.target.closest("#f-ph, #f-ph-menu")) $("f-ph-menu").hidden = true;
+});
+// Registered before full screen's own Esc, so the menu closes first.
+window.addEventListener(
+  "keydown",
+  (e) => {
+    if (e.key !== "Escape" || $("f-ph-menu").hidden) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    $("f-ph-menu").hidden = true;
+  },
+  true
+);
+
 const editorFullscreen = wireFullscreen({ area: $("f-text-editor"), button: $("f-fullscreen") });
 
 $("f-sensitive").addEventListener("change", (e) => {

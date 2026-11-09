@@ -54,8 +54,8 @@
             <div class="field">
               <label for="f-trigger">Trigger</label>
               <input class="input" id="f-trigger" placeholder="`email" autocomplete="off" spellcheck="false">
-              <div class="hint">Start with <code>`</code> so it never fires by accident.</div>
-              <div class="hint" id="f-secondary" hidden></div>
+              <div class="hint" id="f-trigger-tip" hidden>Start with <code>`</code> so it never fires by accident.</div>
+              <div class="hint focus-hint" id="f-secondary" hidden></div>
             </div>
           </div>
 
@@ -86,6 +86,20 @@
               <div class="insert-tools">
                 <button type="button" class="ai-icon" id="f-link" title="Add a link" aria-label="Add a link"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6.7 9.3a2.8 2.8 0 0 0 4 0l2.4-2.4a2.8 2.8 0 0 0-4-4l-.8.8"/><path d="M9.3 6.7a2.8 2.8 0 0 0-4 0L2.9 9.1a2.8 2.8 0 0 0 4 4l.8-.8"/></svg></button>
                 <button type="button" class="ai-icon" id="f-image" title="Add a PNG or JPG picture" aria-label="Add a picture"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5"/><circle cx="5.5" cy="6" r="1.1"/><path d="m2 12 3.6-3.4 2.4 2.2 2.6-2.8L14 11.2"/></svg></button>
+                <button type="button" class="ai-icon ph-icon" id="f-ph" title="Insert date, time and more" aria-label="Insert date, time and more">{ }</button>
+              </div>
+              <div class="ph-menu" id="f-ph-menu" hidden>
+                <div class="chips">
+                  <button type="button" class="chip" data-ph="{date}">{date}</button>
+                  <button type="button" class="chip" data-ph="{time}">{time}</button>
+                  <button type="button" class="chip" data-ph="{datetime}">{datetime}</button>
+                  <button type="button" class="chip" data-ph="{day}">{day}</button>
+                  <button type="button" class="chip" data-ph="{clipboard}">{clipboard}</button>
+                  <button type="button" class="chip" data-ph="{uuid}">{uuid}</button>
+                  <button type="button" class="chip" data-ph="{input:Name}">{input:…}</button>
+                  <button type="button" class="chip" data-ph="{snippet:Name}" title="Include another snippet by its name or trigger">{snippet:…}</button>
+                </div>
+                <details class="more"><summary>More formats</summary><p>Other formats: add codes after a colon, like <code>{date:DD/MM/YYYY}</code> or <code>{time:hh:mm A}</code>. Codes: <code>YYYY</code> <code>YY</code> <code>MMMM</code> <code>MMM</code> <code>MM</code> <code>DD</code> <code>D</code> <code>dddd</code> <code>ddd</code> for dates; <code>HH</code> (24-hour) <code>hh</code> (12-hour) <code>mm</code> <code>ss</code> <code>A</code> (AM/PM) for times. Put other words in [brackets]. Dates from today: <code>{date+7}</code>, <code>{date-1:DD/MM/YYYY}</code>, with <code>w</code>, <code>m</code> or <code>y</code> for weeks, months or years, like <code>{date+2w}</code>.</p></details>
               </div>
               <button type="button" class="ai-icon expand-tool" id="f-fullscreen"></button>
               <div class="ai-tools">
@@ -95,18 +109,6 @@
             </div>
             </div>
             <div class="hint usage" id="f-usage" hidden></div>
-            <div class="hint" style="margin-bottom:6px">Click to insert a placeholder:</div>
-            <div class="chips">
-              <button type="button" class="chip" data-ph="{date}">{date}</button>
-              <button type="button" class="chip" data-ph="{time}">{time}</button>
-              <button type="button" class="chip" data-ph="{datetime}">{datetime}</button>
-              <button type="button" class="chip" data-ph="{day}">{day}</button>
-              <button type="button" class="chip" data-ph="{clipboard}">{clipboard}</button>
-              <button type="button" class="chip" data-ph="{uuid}">{uuid}</button>
-              <button type="button" class="chip" data-ph="{input:Name}">{input:…}</button>
-              <button type="button" class="chip" data-ph="{snippet:Name}" title="Include another snippet by its name or trigger">{snippet:…}</button>
-            </div>
-            <div class="hint" style="margin-top:8px">Other formats: add codes after a colon, like <code>{date:DD/MM/YYYY}</code> or <code>{time:hh:mm A}</code>. Codes: <code>YYYY</code> <code>YY</code> <code>MMMM</code> <code>MMM</code> <code>MM</code> <code>DD</code> <code>D</code> <code>dddd</code> <code>ddd</code> for dates; <code>HH</code> (24-hour) <code>hh</code> (12-hour) <code>mm</code> <code>ss</code> <code>A</code> (AM/PM) for times. Put other words in [brackets]. Dates from today: <code>{date+7}</code>, <code>{date-1:DD/MM/YYYY}</code>, with <code>w</code>, <code>m</code> or <code>y</code> for weeks, months or years, like <code>{date+2w}</code>.</div>
           </div>
 
           <div class="field" id="preview-field">
@@ -114,10 +116,14 @@
             <div class="preview-box" id="preview"></div>
           </div>
 
-          <label class="check">
-            <input type="checkbox" id="f-sensitive">
-            <span><strong>Sensitive</strong><br><span class="hint">Typed out key by key instead of pasted, so it never touches the clipboard. Hidden in the list and search. Not available with formatting.</span></span>
-          </label>
+          <div class="check-row">
+            <label class="btn toggle-btn">
+              <input type="checkbox" id="f-sensitive">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="7" width="10" height="7"/><path d="M5.5 7V4.5a2.5 2.5 0 0 1 5 0V7"/></svg>
+              Sensitive
+            </label>
+            <span class="info" title="Typed out key by key instead of pasted, so it never touches the clipboard. Hidden in the list and search. Not available with formatting." tabindex="0">i</span>
+          </div>
 
           <div class="actions">
             <button type="submit" class="btn primary" id="save-btn">Save</button>
@@ -168,7 +174,8 @@
             <div class="card-row">
               <div style="flex:1">
                 <h3>Expand triggers as I type</h3>
-                <p style="margin:0">Type <code>`email</code> in any app and it becomes your email, without opening the search box. This needs a keyboard hook that sees your keystrokes. Zap only keeps the last few characters in memory and never saves or logs them.</p>
+                <p style="margin:0">Type <code>`email</code> in any app and it expands.</p>
+                <details class="more"><summary>Learn more</summary><p>This needs a keyboard hook that sees your keystrokes. Zap only keeps the last few characters in memory and never saves or logs them.</p></details>
               </div>
               <label class="switch"><input type="checkbox" id="inline"><span class="slider"></span></label>
             </div>
@@ -176,7 +183,7 @@
 
           <div class="card">
             <h3>Secondary trigger prefix</h3>
-            <p>Some websites block characters like <code>`</code> in their fields. Set a prefix of letters, like <code>zz</code>, and every trigger that starts with a symbol also works with it. Leave it empty to turn this off.</p>
+            <p>Letters like <code>zz</code> to use where websites block <code>`</code>. Leave empty for off.</p>
             <div class="card-row">
               <input class="input" id="secondary-prefix" placeholder="zz" autocomplete="off" spellcheck="false" style="max-width:160px">
               <button class="btn" id="secondary-save">Save</button>
@@ -186,7 +193,7 @@
 
           <div class="card">
             <h3>Excluded apps</h3>
-            <p>Triggers typed in these apps are ignored (inline mode only). One program name per line, e.g. <code>valorant.exe</code>.</p>
+            <p>Triggers don't expand in these apps. One program per line.</p>
             <textarea class="textarea" id="excluded" style="min-height:90px" spellcheck="false" placeholder="valorant.exe&#10;keepass.exe"></textarea>
             <div class="actions" style="margin-top:10px"><button class="btn" id="excluded-save">Save list</button></div>
           </div>
@@ -194,18 +201,17 @@
 
           <div class="settings-group" data-group="shortcuts" hidden>
           <div class="card">
-            <h3>Search hotkey</h3>
-            <p>Opens the Zap search box from any app. Click the box and press the new combination.</p>
+            <h3>Search hotkey <span class="info" title="Good choices: Ctrl+Shift+Space, Alt+;, Pause, ScrollLock, F13 to F24." tabindex="0">i</span></h3>
+            <p>Opens the search box from any app. Click the field and press new keys.</p>
             <div class="card-row">
               <input class="input hotkey-input" id="hotkey" readonly>
               <button class="btn" id="hotkey-reset">Reset</button>
             </div>
-            <div class="hint">Good choices: <kbd>Ctrl+Shift+Space</kbd>, <kbd>Alt+;</kbd>, <kbd>Pause</kbd>, <kbd>ScrollLock</kbd>, <kbd>F13</kbd>–<kbd>F24</kbd>.</div>
           </div>
 
           <div class="card">
             <h3>Save selection hotkey</h3>
-            <p>Select text in any app and press this to turn it into a new snippet. Click the box and press the new combination.</p>
+            <p>Turns selected text in any app into a snippet. Click the field and press new keys.</p>
             <div class="card-row">
               <input class="input hotkey-input" id="save-hotkey" readonly>
               <button class="btn" id="save-hotkey-reset">Reset</button>
@@ -217,7 +223,8 @@
           <div class="settings-group" data-group="ai" hidden>
           <div class="card">
             <h3>AI generation</h3>
-            <p>Write directions in a snippet's Text box, like "polite email asking for leave on Friday", and click the star in its corner. Only those directions are sent, from your PC straight to the provider you choose, and only when you click. Sensitive snippets are never sent. You pay your provider for what you use.</p>
+            <p>Write directions in a snippet's Text box and click the star. Uses your own API key.</p>
+            <details class="more"><summary>Learn more</summary><p>Only those directions are sent, from your PC straight to the provider you choose, and only when you click. Sensitive snippets are never sent. You pay your provider for what you use.</p></details>
             <div class="card-row">
               <select class="input ai-select" id="ai-provider" aria-label="AI provider">
                 <option value="">Off</option>
@@ -238,10 +245,10 @@
               <div class="field ai-model">
                 <label for="ai-model">Model</label>
                 <input class="input" id="ai-model" autocomplete="off" spellcheck="false">
-                <div class="hint">Leave empty for the default shown. Providers rename models over time, so change this if one stops working.</div>
+                <div class="hint">Leave empty for the default.</div>
               </div>
             </div>
-            <div class="ai-links">
+            <div class="ai-links" id="ai-links">
               <div class="hint">Need an API key? Get one here:</div>
               <div class="chips">
                 <button type="button" class="chip" data-key-page="claude">Claude ↗</button>
@@ -259,14 +266,14 @@
             <div class="card-row">
               <div style="flex:1">
                 <h3>Updates</h3>
-                <p style="margin:0">You're on Zap <span id="app-version"></span>. Zap checks GitHub about once an hour and notifies you when a new version is ready. Nothing about you or your snippets is sent.</p>
+                <p style="margin:0">You're on Zap <span id="app-version"></span>. Checks GitHub about once an hour.</p>
               </div>
               <label class="switch"><input type="checkbox" id="check-updates"><span class="slider"></span></label>
             </div>
             <div class="card-row" style="margin-top:12px">
               <div style="flex:1">
                 <h3>Install updates automatically</h3>
-                <p style="margin:0">Downloads new versions in the background and installs them when you're away from the keyboard, with no Zap window open. Zap restarts by itself in the tray.</p>
+                <p style="margin:0">Installs when you're away from the keyboard and Zap is closed to the tray.</p>
               </div>
               <label class="switch"><input type="checkbox" id="auto-update"><span class="slider"></span></label>
             </div>
@@ -279,7 +286,7 @@
             <div class="card-row">
               <div style="flex:1">
                 <h3>Stats</h3>
-                <p style="margin:0">Counts how often each snippet is used and the last date, to estimate the typing time Zap saves you. Nothing you type is recorded, and stats stay on this PC, encrypted. Turn this off to stop counting.</p>
+                <p style="margin:0">Counts snippet use to estimate time saved. Stays on this PC, encrypted.</p>
               </div>
               <label class="switch"><input type="checkbox" id="keep-stats"><span class="slider"></span></label>
             </div>
@@ -296,7 +303,8 @@
             <div class="card-row">
               <div style="flex:1">
                 <h3>Anonymous user count</h3>
-                <p style="margin:0">Once a day, Zap sends a random ID and its version number so we can count how many people use it. The ID is made on this PC and isn't linked to you, your PC or your snippets, and the server keeps only a count, not the ID. Turning this off deletes the ID.</p>
+                <p style="margin:0">Sends a random ID and the version once a day, nothing else.</p>
+                <details class="more"><summary>Learn more</summary><p>It lets us count how many people use Zap. The ID is made on this PC and isn't linked to you, your PC or your snippets, and the server keeps only a count, not the ID. Turning this off deletes the ID.</p></details>
               </div>
               <label class="switch"><input type="checkbox" id="usage-ping"><span class="slider"></span></label>
             </div>
@@ -304,7 +312,7 @@
 
           <div class="card">
             <h3>Backup</h3>
-            <p>Export saves your snippets as a <strong>plain, unencrypted</strong> JSON file, so keep it somewhere safe. Importing updates snippets with the same trigger.</p>
+            <p>Export is a <strong>plain, unencrypted</strong> file, so keep it safe. Import updates snippets with the same trigger.</p>
             <div class="actions">
               <button class="btn" id="export-btn">Export…</button>
               <button class="btn" id="import-btn">Import…</button>
@@ -312,7 +320,9 @@
           </div>
 
           <div class="card">
-            <h3>How Zap protects your data</h3>
+            <h3>Your data</h3>
+            <p>Don't store passwords here. A password manager is the right place for those.</p>
+            <details class="more"><summary>How Zap protects your data</summary>
             <ul class="security-list">
               <li>Snippets are encrypted on disk with Windows DPAPI, so only your Windows account can read them.</li>
               <li>Pasted text is kept out of Win+V clipboard history and cloud clipboard sync, and your previous clipboard text is put back.</li>
@@ -321,8 +331,8 @@
               <li>Usage stats (how often each snippet is used, and the last date) stay on this PC, encrypted. You can turn them off or reset them above.</li>
               <li>Zap connects to GitHub to check for updates, and once a day to our server for the anonymous user count: a random ID and the version, nothing else. You can turn both off above.</li>
               <li>Updates are signed, and Zap refuses any download that isn't.</li>
-              <li>Don't store passwords here. A password manager is the right place for those.</li>
             </ul>
+            </details>
           </div>
           </div>
         </div>
