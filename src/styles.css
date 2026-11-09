@@ -81,8 +81,15 @@ html, body, .list, .editor, .settings, .popup-list, .textarea { overscroll-behav
 }
 .field-tools { display: flex; align-items: center; gap: var(--space-2); }
 .text-box { position: relative; display: flex; flex-direction: column; }
-.text-box.ai-on .textarea { padding-bottom: 38px; }
-.ai-tools { position: absolute; right: 18px; bottom: 6px; display: flex; gap: var(--space-1); }
+/* The icons sit over the text box rather than in it, so they stay put while the text scrolls. */
+.text-box .textarea { padding-right: 46px; padding-bottom: 38px; scroll-padding-bottom: 40px; }
+.text-box::after { content: ""; position: absolute; left: 1px; right: 18px; bottom: 1px; height: 37px; background: var(--surface); pointer-events: none; }
+.ai-tools { position: absolute; z-index: 1; right: 18px; bottom: 6px; display: flex; gap: var(--space-1); }
+.insert-tools { position: absolute; z-index: 1; left: 6px; bottom: 6px; display: flex; gap: var(--space-1); }
+.expand-tool { position: absolute; z-index: 1; top: 6px; right: 18px; }
+.text-editor.fullscreen { position: fixed; inset: 0; z-index: 40; margin: 0; display: flex; flex-direction: column; padding: var(--space-4); background: var(--bg); }
+.text-editor.fullscreen .text-box { flex: 1; min-height: 0; }
+.text-editor.fullscreen .textarea { flex: 1; min-height: 0; resize: none; }
 .ai-icon {
   display: grid;
   place-items: center;
@@ -110,7 +117,7 @@ html, body, .list, .editor, .settings, .popup-list, .textarea { overscroll-behav
 .ai-model { margin-top: var(--space-3); }
 .inline-check { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--muted); cursor: pointer; }
 .rich-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
-.rich-editor { min-height: 160px; overflow-y: auto; white-space: normal; cursor: text; }
+.rich-editor { height: 180px; min-height: 160px; overflow-y: auto; white-space: normal; cursor: text; }
 .rich-editor:focus { outline: none; border-color: var(--border-strong); }
 .rich-editor img { max-width: 100%; height: auto; vertical-align: middle; cursor: pointer; }
 .rich-editor img.image-selected { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -393,6 +400,7 @@ code { color: var(--muted); }
 .context-menu .menu-danger { color: var(--danger); }
 .toast {
   position: fixed;
+  z-index: 70;
   bottom: var(--space-5);
   left: 50%;
   transform: translateX(-50%);

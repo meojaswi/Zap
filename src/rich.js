@@ -231,14 +231,39 @@ async function fitImage(file, bitmap) {
   throw new Error("too large");
 }
 
-/** Adds an Image button, paste support and size controls to a formatted-text editor. */
-function wireImages({ editor, toolbar, showError, keepOpen = () => {} }) {
+const EXPAND_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg>';
+const COLLAPSE_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 6.5h-4v-4M9.5 6.5l4.5-4.5M2.5 9.5h4v4M6.5 9.5 2 14"/></svg>';
+
+/** Lets `button` stretch `area` (the label, toolbar and text box) over the whole window. Esc comes back. */
+function wireFullscreen({ area, button }) {
+  const isOn = () => area.classList.contains("fullscreen");
+  function show(on) {
+    area.classList.toggle("fullscreen", on);
+    button.innerHTML = on ? COLLAPSE_ICON : EXPAND_ICON;
+    button.title = on ? "Exit full screen (Esc)" : "Full screen";
+    button.setAttribute("aria-label", button.title);
+  }
+  // Without this the click would take the caret out of the text.
+  button.addEventListener("mousedown", (e) => e.preventDefault());
+  button.addEventListener("click", () => show(!isOn()));
+  // Capture, so Esc leaves full screen before it can close the form. An open link box handles its own Esc.
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key !== "Escape" || !isOn() || document.querySelector(".link-dialog-back")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      show(false);
+    },
+    true
+  );
+  show(false);
+  return { exit: () => show(false) };
+}
+
+/** Wires a picture button, paste support and size controls to a formatted-text editor. */
+function wireImages({ editor, toolbar, button, ready = () => true, showError, keepOpen = () => {} }) {
   const invoke = window.__TAURI__.core.invoke;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "chip";
-  button.textContent = "Image";
-  button.title = "Add a PNG or JPG picture";
   const picker = document.createElement("input");
   picker.type = "file";
   picker.accept = ".png,.jpg,.jpeg,image/png,image/jpeg";
@@ -247,7 +272,7 @@ function wireImages({ editor, toolbar, showError, keepOpen = () => {} }) {
   const sizes = document.createElement("span");
   sizes.className = "image-sizes";
   sizes.hidden = true;
-  toolbar.append(button, sizes, picker);
+  toolbar.append(sizes, picker);
 
   let selected = null;
   let range = null;
@@ -310,8 +335,10 @@ function wireImages({ editor, toolbar, showError, keepOpen = () => {} }) {
     }
   }
 
-  button.addEventListener("mousedown", (e) => {
-    e.preventDefault();
+  // Without this the click would take the caret out of the text.
+  button.addEventListener("mousedown", (e) => e.preventDefault());
+  button.addEventListener("click", () => {
+    if (!ready()) return;
     remember();
     keepOpen(true);
     picker.click();

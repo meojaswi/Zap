@@ -198,6 +198,7 @@ function select(id, copyOf = null) {
   setRich(Boolean(snippet?.html));
   $("f-group").value = snippet?.group ?? "";
   $("delete-btn").hidden = creating;
+  editorFullscreen.exit();
   generator.reset();
   $("duplicate-btn").hidden = creating;
   renderUsage();
@@ -209,6 +210,7 @@ function select(id, copyOf = null) {
 
 function closeEditor() {
   selectedId = null;
+  editorFullscreen.exit();
   $("form").hidden = true;
   $("welcome").hidden = false;
   renderList();
@@ -231,7 +233,6 @@ function setRich(on) {
   $("f-content").hidden = on;
   $("f-rich-editor").hidden = !on;
   $("f-rich-toolbar").hidden = !on;
-  $("f-link").hidden = on;
   // Formatted snippets are pasted, so they can't be Sensitive (typed) as well.
   if (on) $("f-sensitive").checked = false;
 }
@@ -446,12 +447,7 @@ document.querySelectorAll("#f-rich-toolbar [data-cmd]").forEach((button) =>
   // mousedown + preventDefault keeps the text selection in the editor.
   button.addEventListener("mousedown", (e) => {
     e.preventDefault();
-    const command = button.dataset.cmd;
-    if (command === "createLink") {
-      openLinkDialog($("f-rich-editor"), updatePreview);
-      return;
-    }
-    document.execCommand(command, false);
+    document.execCommand(button.dataset.cmd, false);
     updatePreview();
   })
 );
@@ -649,7 +645,6 @@ function renderAi() {
   // The star only appears once AI can actually run.
   const ready = Boolean(provider) && state.aiKeySaved.includes(provider);
   $("f-generate").hidden = !ready;
-  $("f-text-box").classList.toggle("ai-on", ready);
   if (!ready) generator.reset();
   $("ai-provider").value = provider;
   $("ai-details").hidden = !provider;
@@ -764,7 +759,22 @@ window.addEventListener("blur", closeSnippetMenu);
 
 // ---------- Images and quick links ----------
 
-const editorImages = wireImages({ editor: $("f-rich-editor"), toolbar: $("f-rich-toolbar"), showError: (e) => toast(e, true) });
+// The link and picture icons also work on plain text, by turning Formatting on first.
+function startFormatting() {
+  if (isRich()) return true;
+  if ($("f-sensitive").checked) {
+    toast("Sensitive snippets can't be formatted", true);
+    return false;
+  }
+  $("f-rich").click();
+  const selection = window.getSelection();
+  selection.selectAllChildren($("f-rich-editor"));
+  selection.collapseToEnd();
+  return true;
+}
+
+const editorImages = wireImages({ editor: $("f-rich-editor"), toolbar: $("f-rich-toolbar"), button: $("f-image"), ready: startFormatting, showError: (e) => toast(e, true) });
+const editorFullscreen = wireFullscreen({ area: $("f-text-editor"), button: $("f-fullscreen") });
 
 $("f-sensitive").addEventListener("change", (e) => {
   if (e.target.checked && isRich()) {
@@ -773,14 +783,8 @@ $("f-sensitive").addEventListener("change", (e) => {
   }
 });
 
+// Without this the click would take the caret out of the text.
+$("f-link").addEventListener("mousedown", (e) => e.preventDefault());
 $("f-link").addEventListener("click", () => {
-  if ($("f-sensitive").checked) {
-    toast("Sensitive snippets can't be formatted", true);
-    return;
-  }
-  $("f-rich").click();
-  const selection = window.getSelection();
-  selection.selectAllChildren($("f-rich-editor"));
-  selection.collapseToEnd();
-  openLinkDialog($("f-rich-editor"), updatePreview);
+  if (startFormatting()) openLinkDialog($("f-rich-editor"), updatePreview);
 });

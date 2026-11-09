@@ -155,7 +155,6 @@ function setRich(on) {
   $("add-content").hidden = on;
   $("add-rich-editor").hidden = !on;
   $("add-rich-toolbar").hidden = !on;
-  $("add-link-quick").hidden = on;
 }
 
 function richText() {
@@ -167,12 +166,15 @@ function textField() {
 }
 
 function showFormError(message) {
+  // The message sits below the text box, which full screen would cover.
+  formFullscreen.exit();
   $("add-error").textContent = message;
   $("add-error").hidden = false;
 }
 
 function closeForm() {
   closeLinkDialog();
+  formFullscreen.exit();
   showForm(false);
   input.focus();
 }
@@ -211,26 +213,36 @@ document.querySelectorAll("#add-rich-toolbar [data-cmd]").forEach((button) =>
   // mousedown + preventDefault keeps the text selection in the editor.
   button.addEventListener("mousedown", (e) => {
     e.preventDefault();
-    if (button.dataset.cmd === "createLink") openLinkDialog($("add-rich-editor"));
-    else document.execCommand(button.dataset.cmd, false);
+    document.execCommand(button.dataset.cmd, false);
   })
 );
 
 // Pasted formatting (from a web page, Word...) is cleaned down to what snippets support.
+// The link and picture icons also work on plain text, by turning Formatting on first.
+function startFormatting() {
+  if (isRich()) return true;
+  $("add-rich").click();
+  const selection = window.getSelection();
+  selection.selectAllChildren($("add-rich-editor"));
+  selection.collapseToEnd();
+  return true;
+}
+
+const formFullscreen = wireFullscreen({ area: $("add-text-editor"), button: $("add-fullscreen") });
 const formImages = wireImages({
   editor: $("add-rich-editor"),
   toolbar: $("add-rich-toolbar"),
+  button: $("add-image"),
+  ready: startFormatting,
   showError: showFormError,
   keepOpen: (keep) => invoke("set_popup_keep_open", { keep }),
 });
 $("add-rich-editor").addEventListener("paste", (e) => pasteRich(e, formImages));
 wireAutoLink($("add-rich-editor"));
-$("add-link-quick").addEventListener("click", () => {
-  $("add-rich").click();
-  const selection = window.getSelection();
-  selection.selectAllChildren($("add-rich-editor"));
-  selection.collapseToEnd();
-  openLinkDialog($("add-rich-editor"));
+// Without this the click would take the caret out of the text.
+$("add-link").addEventListener("mousedown", (e) => e.preventDefault());
+$("add-link").addEventListener("click", () => {
+  if (startFormatting()) openLinkDialog($("add-rich-editor"));
 });
 
 $("add-trigger").addEventListener("input", renderTriggerHint);
@@ -279,7 +291,6 @@ async function reloadData() {
   const provider = data.settings.aiProvider;
   const ready = Boolean(provider) && data.aiKeySaved.includes(provider);
   $("add-generate").hidden = !ready;
-  $("add-text-box").classList.toggle("ai-on", ready);
   if (!ready) generator.reset();
 }
 
