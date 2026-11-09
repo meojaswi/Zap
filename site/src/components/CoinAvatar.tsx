@@ -1,57 +1,51 @@
-import { useId } from "react";
+const CELL_WIDTH = 6;
+const CELL_HEIGHT = 12;
 
 /**
- * Cut-out portrait (transparent PNG) on a dark studio backdrop: high-contrast grayscale, a soft rim
- * light that follows the silhouette, and film grain. The rim light turns Zap yellow when `active`.
- * Falls back to initials without a photo.
+ * Portrait drawn as ASCII art on a dark coin (see site/scripts/ascii_portraits.py), so no photo is
+ * ever shipped. The characters turn Zap yellow when `active`. Falls back to initials with no art.
  */
 export function CoinAvatar({
-  src,
+  art,
   name,
   active = false,
   className = "",
 }: {
-  src?: string;
+  art: string[];
   name: string;
   active?: boolean;
   className?: string;
 }) {
-  // useId output contains characters like ":" that break url(#...) references.
-  const grainId = `grain-${useId().replace(/[^a-zA-Z0-9-]/g, "")}`;
   const initials = name
     .split(/\s+/)
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const cols = art[0]?.length ?? 0;
 
   return (
-    <div
-      className={`overflow-hidden rounded-full bg-[radial-gradient(circle_at_35%_25%,#2e2e33,#050506_75%)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_14px_40px_-12px_rgba(0,0,0,0.9)] ${className}`}
-    >
-      {src ? (
-        <>
-          <img
-            src={src}
-            alt={name}
-            draggable={false}
-            className={`size-full object-cover object-top transition-[filter] duration-500 ${
-              active
-                ? "[filter:grayscale(1)_contrast(1.3)_brightness(0.95)_drop-shadow(0_0_10px_rgba(250,204,21,0.55))]"
-                : "[filter:grayscale(1)_contrast(1.3)_brightness(0.92)_drop-shadow(0_0_10px_rgba(228,228,231,0.45))]"
-            }`}
-          />
-          {/* Film grain */}
-          <svg aria-hidden className="pointer-events-none absolute inset-0 size-full opacity-40 mix-blend-overlay">
-            <filter id={grainId}>
-              <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" stitchTiles="stitch" />
-              <feColorMatrix type="saturate" values="0" />
-            </filter>
-            <rect width="100%" height="100%" filter={`url(#${grainId})`} />
-          </svg>
-          {/* Edge vignette */}
-          <div className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_30px_rgba(0,0,0,0.6)]" />
-        </>
+    <div className={`overflow-hidden rounded-full bg-[#050506] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] ${className}`}>
+      {art.length ? (
+        <svg
+          viewBox={`0 0 ${cols * CELL_WIDTH} ${art.length * CELL_HEIGHT}`}
+          role="img"
+          aria-label={name}
+          className={`size-full font-mono text-[10px] transition-[fill] duration-500 ${active ? "fill-accent" : "fill-zinc-200"}`}
+        >
+          {art.map((line, row) => (
+            // textLength keeps the columns aligned whichever monospace font the visitor gets.
+            <text
+              key={row}
+              y={(row + 1) * CELL_HEIGHT - 2}
+              textLength={line.length * CELL_WIDTH}
+              lengthAdjust="spacingAndGlyphs"
+              style={{ whiteSpace: "pre" }}
+            >
+              {line}
+            </text>
+          ))}
+        </svg>
       ) : (
         <div className="grid size-full place-items-center font-mono text-2xl font-semibold text-zinc-300">{initials}</div>
       )}

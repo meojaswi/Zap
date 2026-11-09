@@ -25,7 +25,6 @@ function Coin({
   onActivate: () => void;
   onDeactivate: () => void;
 }) {
-  const avatar = person.avatar ? `${import.meta.env.BASE_URL}${person.avatar}` : undefined;
   const ringId = `ring-path-${index}`;
   const link = person.links[0];
   const active = state === "active";
@@ -56,7 +55,7 @@ function Coin({
         </text>
       </svg>
       <CoinAvatar
-        src={avatar}
+        art={person.portrait}
         name={person.name}
         active={active}
         className={`absolute inset-0 transition-[scale] duration-500 ease-out-soft ${active ? "scale-[0.66]" : "scale-100"}`}
