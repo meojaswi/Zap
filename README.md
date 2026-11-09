@@ -23,6 +23,7 @@ Type a short trigger in any app and Zap turns it into your saved text: emails, a
 - **Snippets inside snippets**: reuse a signature or a greeting in other snippets with `{snippet:Name}`.
 - **Placeholders**: `{date}`, `{time}`, `{clipboard}` and more are filled in at the moment a snippet is inserted.
 - **Formatting**: bold, italic, underline, links, lists and images, pasted with their formatting into Gmail, Outlook, Word and similar apps.
+- **Full screen editing**: stretch the Text box over the whole window for longer snippets.
 - **Sensitive snippets**: typed key by key so they never touch the clipboard, and hidden in the list and search.
 - **Excluded apps**: switch off inline expansion in games, password managers, remote-desktop apps or anything else.
 - **Groups**: sort snippets into groups like Work or College, shown as collapsible sections.
@@ -57,7 +58,7 @@ Give a snippet a **Group** in the editor, like `Work`, `College` or `Email`. The
 
 ### Adding snippets from the search box
 
-You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. Tick **Formatting** for the same toolbar as the main editor: bold, italic, underline, links and lists. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
+You don't need the main window to add a snippet. In the `Ctrl+Shift+Space` search box, click **+ new** or press `Ctrl+N`. If nothing matches your search, pressing `Enter` offers to add it, with the name and trigger filled in from what you typed. Tick **Formatting** for the same toolbar as the main editor: bold, italic, underline and lists. The icons inside the text box add links and pictures, and the one in its top-right corner opens full screen. `Ctrl+Enter` saves, and the new snippet is selected so `Enter` inserts it straight away. `Esc` goes back to the search.
 
 ### Save a selection as a snippet
 
@@ -73,7 +74,7 @@ This works for triggers typed inline, not for snippets inserted from the search 
 
 ### Snippets inside snippets
 
-Use `{snippet:Name}` to include another snippet, so changing your signature updates every template that uses it. For example, a snippet can end with `{snippet:Signature}`, or `` {snippet:`sig} `` using its trigger. The **{snippet:…}** chip in the editor adds one for you.
+Use `{snippet:Name}` to include another snippet, so changing your signature updates every template that uses it. For example, a snippet can end with `{snippet:Signature}`, or `` {snippet:`sig} `` using its trigger. The **{snippet:…}** chip in the editor's **{ }** menu adds one for you.
 
 Fill-ins and date placeholders in the included snippet work too, and included snippets can include others, up to 8 levels deep. If the name doesn't match any snippet, or snippets include each other in a loop, the `{snippet:…}` text is left as written so you can spot it; renaming a snippet needs the same change wherever it's included.
 
@@ -94,7 +95,7 @@ New installs come with these, so you can try Zap straight away. Edit or delete t
 
 ### Placeholders
 
-Placeholders go inside a snippet's text; they aren't triggers on their own. For example, a snippet with the trigger `` `now `` and the text `{datetime}` expands to the current date and time.
+Placeholders go inside a snippet's text; they aren't triggers on their own. For example, a snippet with the trigger `` `now `` and the text `{datetime}` expands to the current date and time. Type them yourself, or click the **{ }** icon in the bottom-left corner of the main editor's Text box to pick one.
 
 | Placeholder   | Becomes                   |
 | ------------- | ------------------------- |
@@ -158,21 +159,27 @@ Codes are case-sensitive: `MM` is the month and `mm` is minutes. Put any other w
 
 ### Formatted snippets
 
-Turn on **Formatting** above a snippet's text to use **bold**, *italic*, underline, links and bullet lists, with the toolbar or `Ctrl+B`, `Ctrl+I` and `Ctrl+U`. Pasting formatted text from a web page or Word keeps only those, and links only keep web and email addresses.
+Turn on **Formatting** above a snippet's text to use **bold**, *italic*, underline and bullet lists, with the toolbar or `Ctrl+B`, `Ctrl+I` and `Ctrl+U`. Links have their own icon inside the text box. Pasting formatted text from a web page or Word keeps only these styles and links, and links only keep web and email addresses.
 
 When you use the snippet, Zap pastes the formatted version in apps that accept it, like Gmail, Outlook and Word, and the plain text everywhere else, like Notepad or a search box. Placeholders and fill-ins work inside formatted snippets too. A formatted snippet can't be Sensitive, because it has to be pasted rather than typed. Turning Formatting off keeps the text and removes the formatting.
 
 ### Links and images
 
-Click **Link** above the Text box to add a clickable link. Give it **Display text**, or leave that empty to show the address itself. With Formatting on, typing or pasting a web address makes it a link automatically.
+The icons in the bottom-left corner of the Text box add links and pictures, and turn on **Formatting** for you if it's off.
 
-To add a picture like your signature, turn on **Formatting** and click **Image**, or paste one into the box. PNG and JPG are supported, up to 1 MB; bigger pictures are shrunk for you. Click a picture in the box to make it Small, Medium or Large, or remove it.
+Click the **link** icon to add a clickable link. Give it **Display text**, or leave that empty to show the address itself. With Formatting on, typing or pasting a web address makes it a link automatically.
+
+To add a picture like your signature, click the **picture** icon, or turn on Formatting and paste one into the box. PNG and JPG are supported, up to 1 MB; bigger pictures are shrunk for you. Click a picture in the box to make it Small, Medium or Large, or press `Delete` or `Backspace` to remove it.
 
 Pictures paste into apps that accept them, and places that only take plain text get just the text. Your copied text is put back after a formatted snippet pastes, but a copied image or file can't be, so the snippet takes its place on the clipboard. Each picture is encrypted on your PC like your snippets. While pasting into desktop apps like Word, Zap keeps a decrypted copy in your temp folder for a few seconds. Exports include pictures unencrypted, like the rest of the file. Sensitive snippets can't have formatting or pictures, because they're typed rather than pasted.
 
+### Full screen editing
+
+For longer snippets, click the expand icon in the top-right corner of the Text box, in the main editor or the search box's new-snippet form. The text and its toolbar fill the window. Press `Esc` or click the icon again to go back.
+
 ### Sensitive snippets
 
-Tick **Sensitive** in the editor for private details like an ID number. Normal snippets are pasted through the clipboard for a moment; Sensitive ones are typed key by key instead, so no other program can read them from the clipboard. They're also marked **[locked]** in the list, and their text is hidden in the search popup and left out of search.
+Click the **Sensitive** button below the editor's preview for private details like an ID number; it stays highlighted while on. Normal snippets are pasted through the clipboard for a moment; Sensitive ones are typed key by key instead, so no other program can read them from the clipboard. They're also marked **[locked]** in the list, and their text is hidden in the search popup and left out of search.
 
 Typing takes longer than pasting, at about 50 characters a second, so keep your hands off the keyboard until it finishes. Every snippet is encrypted on disk either way, and exports include Sensitive snippets as plain text.
 
